@@ -10,7 +10,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Camera, Mail, User as UserIcon, LogOut } from "lucide-react";
+import {
+  Camera,
+  Mail,
+  User as UserIcon,
+  LogOut,
+  Lock,
+  AtSign,
+  Shield,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -30,10 +39,28 @@ export default function ProfilePage() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("userType");
-    localStorage.removeItem("userName");
-    router.push("/dashboard");
-    window.location.reload();
+    const confirmMessage = isGuest
+      ? "确定要退出游客模式吗？本地保存的数据将会保留，但下次需要重新登录。"
+      : "确定要退出登录吗？";
+
+    if (window.confirm(confirmMessage)) {
+      localStorage.removeItem("userType");
+      localStorage.removeItem("userName");
+      router.push("/dashboard");
+      window.location.reload();
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (
+      window.confirm("确定要删除账户吗？此操作无法撤销，所有数据将被永久删除！")
+    ) {
+      // 执行删除账户逻辑
+      localStorage.removeItem("userType");
+      localStorage.removeItem("userName");
+      router.push("/dashboard");
+      window.location.reload();
+    }
   };
 
   const isGuest = userType === "guest";
@@ -85,7 +112,16 @@ export default function ProfilePage() {
         {/* Guest Notice */}
         {isGuest && (
           <Card className="border-primary/50 bg-primary/5">
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                立即登录
+              </CardTitle>
+              <CardDescription>
+                解锁完整功能，保存和同步你的创作
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="flex flex-col gap-4">
                 <p className="text-sm">
                   游客模式下，你的项目只会保存在本地浏览器中。登录账户后可以在多设备间同步数据并与社区分享。
@@ -167,7 +203,10 @@ export default function ProfilePage() {
         {/* Account Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>账户操作</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              账户操作
+            </CardTitle>
             <CardDescription>
               {isGuest ? "退出游客模式" : "管理你的账户"}
             </CardDescription>
@@ -175,7 +214,11 @@ export default function ProfilePage() {
           <CardContent className="space-y-3">
             <Button
               variant="outline"
-              className="w-full justify-start"
+              className={
+                isGuest
+                  ? "w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-white [&_svg]:hover:text-white"
+                  : "w-full justify-start"
+              }
               onClick={handleLogout}
             >
               <LogOut className="mr-1.5 h-4 w-4" />
@@ -184,7 +227,8 @@ export default function ProfilePage() {
             {isLoggedIn && (
               <Button
                 variant="outline"
-                className="w-full justify-start text-destructive hover:text-destructive"
+                className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-white [&_svg]:hover:text-white"
+                onClick={handleDeleteAccount}
               >
                 删除账户
               </Button>

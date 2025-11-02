@@ -145,7 +145,6 @@ export default function DashboardPage() {
         {/* Official Templates Section */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
             <h2 className="text-2xl font-semibold">官方模板</h2>
           </div>
 
@@ -219,7 +218,6 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-4">
           <Link href="/dashboard/community-popular" className="group w-fit">
             <div className="flex items-center gap-2 cursor-pointer">
-              <TrendingUp className="h-5 w-5 text-primary" />
               <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors">
                 社区热门
               </h2>

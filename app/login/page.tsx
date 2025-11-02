@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LogIn, UserPlus, User, X } from "lucide-react";
+import { LogIn, UserPlus, User, X, Mail, Lock, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,8 +21,9 @@ export default function LoginPage() {
   const handleGuestLogin = () => {
     // 设置游客状态
     localStorage.setItem("userType", "guest");
-    localStorage.removeItem("userName");
+    localStorage.setItem("userName", "游客");
     router.push("/dashboard");
+    window.location.reload();
   };
 
   const handleLogin = () => {
@@ -30,6 +31,7 @@ export default function LoginPage() {
     localStorage.setItem("userType", "user");
     localStorage.setItem("userName", "用户名");
     router.push("/dashboard");
+    window.location.reload();
   };
 
   const handleRegister = () => {
@@ -37,6 +39,7 @@ export default function LoginPage() {
     localStorage.setItem("userType", "user");
     localStorage.setItem("userName", "新用户");
     router.push("/dashboard");
+    window.location.reload();
   };
 
   return (
@@ -61,16 +64,25 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">用户名</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <UserCircle className="h-4 w-4" />
+                  用户名
+                </label>
                 <Input placeholder="输入用户名" />
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-sm font-medium">邮箱</label>
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                邮箱
+              </label>
               <Input type="email" placeholder="name@example.com" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">密码</label>
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                密码
+              </label>
               <Input type="password" placeholder="输入密码" />
             </div>
 
