@@ -8,15 +8,32 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PlusCircle, Folder, Star, TrendingUp, Sparkles } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  PlusCircle,
+  Dices,
+  Star,
+  TrendingUp,
+  Sparkles,
+  Shuffle,
+  Users as UsersIcon,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { ProjectCard, NewProjectCard } from "@/components/project-card";
 
 export default function DashboardPage() {
-  // 模拟登录状态，实际使用时替换为真实的认证状态
-  const [isLoggedIn] = useState(false);
-  const [userName] = useState("用户");
+  const [userType, setUserType] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUserType(localStorage.getItem("userType"));
+      setUserName(localStorage.getItem("userName") || "用户");
+    }
+  }, []);
 
   // 获取问候语
   const getGreeting = () => {
@@ -26,26 +43,35 @@ export default function DashboardPage() {
     return "晚上好";
   };
 
+  // 判断是否为游客
+  const isGuest = userType === "guest";
+  // 判断是否已登录（包括游客和正式用户）
+  const isLoggedIn = userType === "user";
+
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
       <div className="w-full max-w-6xl flex flex-col gap-8">
         {/* Welcome Section */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between mt-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                {isLoggedIn ? `${getGreeting()}，${userName}` : "你好，游客"}
-              </h1>
+          <div className="mt-4">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+              {!userType
+                ? "欢迎使用 Randomizer"
+                : isLoggedIn
+                ? `${getGreeting()}，${userName}`
+                : "你好，游客"}
+            </h1>
+            {!userType || isGuest ? (
               <p className="text-muted-foreground mt-1">
-                {isLoggedIn
-                  ? "欢迎回来，继续你的创作之旅"
-                  : "登录后开始创建你的随机器项目"}
+                <Link href="/login" className="text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary transition-colors">
+                  登录
+                </Link>{" "}
+                即可保存并与世界分享您的项目
               </p>
-            </div>
-            {!isLoggedIn && (
-              <Link href="/login">
-                <Button>登录 / 注册</Button>
-              </Link>
+            ) : (
+              <p className="text-muted-foreground mt-1">
+                欢迎回来，继续你的创作之旅
+              </p>
             )}
           </div>
         </div>
@@ -53,7 +79,14 @@ export default function DashboardPage() {
         {/* My Projects Section */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">我的项目</h2>
+            <Link href="/dashboard/my-projects" className="group">
+              <div className="flex items-center gap-2 cursor-pointer">
+                <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors">
+                  我的项目
+                </h2>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+            </Link>
             <Link href="/editor/new">
               <Button variant="outline" size="sm">
                 <PlusCircle className="mr-1.5 h-4 w-4" />
@@ -64,72 +97,44 @@ export default function DashboardPage() {
 
           {/* Projects Horizontal Scroll */}
           <div className="relative">
-            <HorizontalScroll className="flex gap-4 pb-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Link key={i} href={`/app/${i}`} className="flex-shrink-0">
-                  <Card className="w-[280px] md:w-[320px] hover:shadow-lg transition-all cursor-pointer">
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Folder className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-base">
-                            我的项目 {i}
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            简单随机器
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          10 个项目 · 最后编辑于{" "}
-                          {new Date().toLocaleDateString("zh-CN")}
-                        </p>
-                        <div className="flex gap-2">
-                          <div className="px-2 py-1 bg-secondary rounded text-xs">
-                            随机选择
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-
-              {/* Add New Card */}
-              <Link href="/editor/new" className="flex-shrink-0">
-                <Card className="w-[280px] md:w-[320px] hover:shadow-lg transition-all cursor-pointer border-dashed">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <PlusCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-base">创建新项目</CardTitle>
-                        <CardDescription className="text-xs">
-                          从模板或空白开始
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        选择模板快速开始创作
-                      </p>
-                      <div className="flex gap-2">
-                        <div className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                          立即创建
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+            <HorizontalScroll className="flex gap-4 pb-4 pl-2">
+              <ProjectCard
+                id="1"
+                name="随机选择器"
+                icon={Dices}
+                gradientFrom="hsl(220 13% 69% / 0.15)"
+                gradientTo="hsl(220 13% 69% / 0.01)"
+                creatorName={userName}
+                tags={["随机选择", "列表"]}
+              />
+              <ProjectCard
+                id="2"
+                name="团队分组"
+                icon={UsersIcon}
+                gradientFrom="hsl(330 81% 60% / 0.15)"
+                gradientTo="hsl(330 81% 60% / 0.01)"
+                creatorName={userName}
+                tags={["团队", "分组"]}
+              />
+              <ProjectCard
+                id="3"
+                name="抽奖转盘"
+                icon={Shuffle}
+                gradientFrom="hsl(262 83% 58% / 0.15)"
+                gradientTo="hsl(262 83% 58% / 0.01)"
+                creatorName={userName}
+                tags={["抽奖", "娱乐"]}
+              />
+              <ProjectCard
+                id="4"
+                name="决策助手"
+                icon={TrendingUp}
+                gradientFrom="hsl(173 80% 40% / 0.15)"
+                gradientTo="hsl(173 80% 40% / 0.01)"
+                creatorName={userName}
+                tags={["决策", "助手"]}
+              />
+              <NewProjectCard />
             </HorizontalScroll>
           </div>
         </div>
@@ -143,28 +148,64 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { name: "简单随机器", desc: "从列表中随机选择项目", icon: "🎲" },
-              { name: "团队分组", desc: "自动创建随机团队", icon: "👥" },
-              { name: "数字生成器", desc: "生成随机数字", icon: "🔢" },
-              { name: "抽奖转盘", desc: "可视化抽奖工具", icon: "🎰" },
-              { name: "问题决策器", desc: "帮你做出选择", icon: "❓" },
-              { name: "名字生成器", desc: "随机生成名字", icon: "📝" },
+              {
+                name: "简单随机器",
+                desc: "从列表中随机选择项目",
+                Icon: Dices,
+                gradient: "hsl(220 13% 69% / 0.15)",
+              },
+              {
+                name: "团队分组",
+                desc: "自动创建随机团队",
+                Icon: UsersIcon,
+                gradient: "hsl(330 81% 60% / 0.15)",
+              },
+              {
+                name: "数字生成器",
+                desc: "生成随机数字",
+                Icon: TrendingUp,
+                gradient: "hsl(173 80% 40% / 0.15)",
+              },
+              {
+                name: "抽奖转盘",
+                desc: "可视化抽奖工具",
+                Icon: Shuffle,
+                gradient: "hsl(262 83% 58% / 0.15)",
+              },
+              {
+                name: "问题决策器",
+                desc: "帮你做出选择",
+                Icon: Sparkles,
+                gradient: "hsl(45 93% 47% / 0.15)",
+              },
+              {
+                name: "名字生成器",
+                desc: "随机生成名字",
+                Icon: PlusCircle,
+                gradient: "hsl(142 76% 36% / 0.15)",
+              },
             ].map((template, i) => (
               <Link key={i} href="/editor/new">
-                <Card className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl">{template.icon}</div>
-                      <div>
-                        <CardTitle className="text-base">
-                          {template.name}
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                          {template.desc}
-                        </CardDescription>
-                      </div>
+                <Card
+                  className="h-[100px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
+                  style={{
+                    background: `linear-gradient(270deg, ${template.gradient} 0%, transparent 50%)`,
+                  }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-between px-5">
+                    <div className="flex flex-col items-start">
+                      <h3 className="text-base font-semibold mb-1">
+                        {template.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {template.desc}
+                      </p>
                     </div>
-                  </CardHeader>
+                    <template.Icon
+                      className="h-14 w-14 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all flex-shrink-0"
+                      strokeWidth={1.5}
+                    />
+                  </div>
                 </Card>
               </Link>
             ))}
@@ -173,43 +214,130 @@ export default function DashboardPage() {
 
         {/* Community Popular Section */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-semibold">社区热门</h2>
-          </div>
+          <Link href="/dashboard/community-popular" className="group w-fit">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors">
+                社区热门
+              </h2>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </Link>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Link key={i} href={`/app/${i}`}>
-                <Card className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                          <span className="text-xs font-semibold">U{i}</span>
-                        </div>
-                        <div>
-                          <CardTitle className="text-sm">
-                            热门项目 {i}
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            by 用户{i}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+            {[
+              {
+                id: 1,
+                name: "随机抽奖",
+                icon: Dices,
+                gradient: "hsl(220 13% 69% / 0.15)",
+                creator: "张三",
+                stars: 110,
+                tags: ["抽奖", "娱乐"],
+              },
+              {
+                id: 2,
+                name: "团队匹配",
+                icon: UsersIcon,
+                gradient: "hsl(330 81% 60% / 0.15)",
+                creator: "李四",
+                stars: 120,
+                tags: ["团队", "协作"],
+              },
+              {
+                id: 3,
+                name: "幸运转盘",
+                icon: Shuffle,
+                gradient: "hsl(262 83% 58% / 0.15)",
+                creator: "王五",
+                stars: 130,
+                tags: ["转盘", "随机"],
+              },
+              {
+                id: 4,
+                name: "数字魔方",
+                icon: TrendingUp,
+                gradient: "hsl(173 80% 40% / 0.15)",
+                creator: "赵六",
+                stars: 140,
+                tags: ["数字", "生成"],
+              },
+              {
+                id: 5,
+                name: "决策助手",
+                icon: Sparkles,
+                gradient: "hsl(45 93% 47% / 0.15)",
+                creator: "孙七",
+                stars: 150,
+                tags: ["决策", "辅助"],
+              },
+              {
+                id: 6,
+                name: "名称生成",
+                icon: PlusCircle,
+                gradient: "hsl(142 76% 36% / 0.15)",
+                creator: "周八",
+                stars: 160,
+                tags: ["名称", "创意"],
+              },
+            ].map((project) => (
+              <Link key={project.id} href={`/app/${project.id}`}>
+                <Card
+                  className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
+                  style={{
+                    background: `linear-gradient(180deg, ${project.gradient} 0%, transparent 100%)`,
+                  }}
+                >
+                  {/* 上部：图标区域 */}
+                  <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
+                    <project.icon
+                      className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+                      strokeWidth={1.5}
+                    />
+                  </div>
+
+                  {/* 下部：文字信息区域 */}
+                  <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">
+                    {/* 标题和星标 */}
+                    <div className="flex items-start justify-between mb-auto">
+                      <h3 className="text-lg font-semibold truncate flex-1">
+                        {project.name}
+                      </h3>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
                         <span className="text-xs text-muted-foreground">
-                          {100 + i * 10}
+                          {project.stars}
                         </span>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      这是一个很有趣的随机器项目，可以帮助你快速做出决策...
-                    </p>
-                  </CardContent>
+
+                    {/* 底部区域：左边标签，右边用户 */}
+                    <div className="flex items-end justify-between gap-2">
+                      {/* 标签 - 左下角 */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* 创建者信息 - 右下角 */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                          {project.creator}
+                        </span>
+                        <Avatar className="h-5 w-5 ring-1 ring-border">
+                          <AvatarFallback className="text-[10px]">
+                            {project.creator.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </div>
+                  </div>
                 </Card>
               </Link>
             ))}

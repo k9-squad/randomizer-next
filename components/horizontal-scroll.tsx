@@ -45,7 +45,7 @@ export function HorizontalScroll({
   return (
     <div
       ref={emblaRef}
-      className="overflow-hidden cursor-grab active:cursor-grabbing"
+      className="overflow-x-hidden overflow-y-visible cursor-grab active:cursor-grabbing py-2 -mx-2"
     >
       <div className={className}>{children}</div>
     </div>

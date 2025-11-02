@@ -6,9 +6,15 @@ import { ModeToggle } from "./mode-toggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 export function Header() {
   const pathname = usePathname();
+  const [userType, setUserType] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserType(localStorage.getItem("userType"));
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -54,17 +60,21 @@ export function Header() {
           </Link>
         </nav>
 
-        {/* Right side - Theme, New Project, Auth */}
+        {/* Right side - Theme, Auth */}
         <div className="flex items-center gap-2">
           <ModeToggle />
-          <Button size="sm" className="hidden md:flex">
-            <PlusCircle className="mr-1.5 h-4 w-4" />
-            新建项目
-          </Button>
-          <Button variant="ghost" size="sm">
-            <User className="h-4 w-4" />
-            <span className="ml-1.5 hidden lg:inline-block">登录</span>
-          </Button>
+          {userType ? (
+            <Link href="/profile">
+              <Button variant="ghost" size="sm">
+                <User className="h-4 w-4" />
+                <span className="ml-1.5 hidden lg:inline-block">个人</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login">
+              <Button size="sm">登录</Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
