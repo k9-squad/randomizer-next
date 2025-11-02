@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, PlusCircle, User } from "lucide-react";
+import { Home, Users, PlusCircle, User } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,8 +30,8 @@ export function Header() {
               variant={pathname === "/dashboard" ? "secondary" : "ghost"}
               size="sm"
             >
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Dashboard
+              <Home className="mr-2 h-4 w-4" />
+              主页
             </Button>
           </Link>
           <Link href="/community">
@@ -40,7 +40,7 @@ export function Header() {
               size="sm"
             >
               <Users className="mr-2 h-4 w-4" />
-              Community
+              社区
             </Button>
           </Link>
           <Link href="/editor/new">
@@ -49,7 +49,7 @@ export function Header() {
               size="sm"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Editor
+              编辑器
             </Button>
           </Link>
         </nav>
@@ -59,11 +59,11 @@ export function Header() {
           <ModeToggle />
           <Button size="sm" className="hidden md:flex">
             <PlusCircle className="mr-2 h-4 w-4" />
-            New Project
+            新建项目
           </Button>
           <Button variant="ghost" size="sm">
             <User className="h-4 w-4" />
-            <span className="ml-2 hidden lg:inline-block">Login</span>
+            <span className="ml-2 hidden lg:inline-block">登录</span>
           </Button>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function BottomNav() {
             pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"
           )}
         >
-          <LayoutDashboard className="h-6 w-6" />
+          <Home className="h-6 w-6" />
         </Link>
         <Link
           href="/community"
