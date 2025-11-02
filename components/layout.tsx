@@ -30,7 +30,7 @@ export function Header() {
               variant={pathname === "/dashboard" ? "secondary" : "ghost"}
               size="sm"
             >
-              <Home className="mr-2 h-4 w-4" />
+              <Home className="mr-1.5 h-4 w-4" />
               主页
             </Button>
           </Link>
@@ -39,7 +39,7 @@ export function Header() {
               variant={pathname === "/community" ? "secondary" : "ghost"}
               size="sm"
             >
-              <Users className="mr-2 h-4 w-4" />
+              <Users className="mr-1.5 h-4 w-4" />
               社区
             </Button>
           </Link>
@@ -48,7 +48,7 @@ export function Header() {
               variant={pathname.startsWith("/editor") ? "secondary" : "ghost"}
               size="sm"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <PlusCircle className="mr-1.5 h-4 w-4" />
               编辑器
             </Button>
           </Link>
@@ -58,12 +58,12 @@ export function Header() {
         <div className="flex items-center gap-2">
           <ModeToggle />
           <Button size="sm" className="hidden md:flex">
-            <PlusCircle className="mr-2 h-4 w-4" />
+            <PlusCircle className="mr-1.5 h-4 w-4" />
             新建项目
           </Button>
           <Button variant="ghost" size="sm">
             <User className="h-4 w-4" />
-            <span className="ml-2 hidden lg:inline-block">登录</span>
+            <span className="ml-1.5 hidden lg:inline-block">登录</span>
           </Button>
         </div>
       </div>

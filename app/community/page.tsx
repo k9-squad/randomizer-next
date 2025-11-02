@@ -51,15 +51,15 @@ export default function CommunityPage() {
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <Button variant="ghost" size="sm">
-                    <Heart className="mr-2 h-4 w-4" />
+                    <Heart className="mr-1.5 h-4 w-4" />
                     {12 + i}
                   </Button>
                   <Button variant="ghost" size="sm">
-                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
                     {3 + i}
                   </Button>
                   <Button variant="ghost" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" />
+                    <Share2 className="mr-1.5 h-4 w-4" />
                     Share
                   </Button>
                 </div>

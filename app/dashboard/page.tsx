@@ -31,7 +31,7 @@ export default function DashboardPage() {
       <div className="w-full max-w-6xl flex flex-col gap-8">
         {/* Welcome Section */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
                 {isLoggedIn ? `${getGreeting()}，${userName}` : "你好，游客"}
@@ -56,7 +56,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-semibold">我的项目</h2>
             <Link href="/editor/new">
               <Button variant="outline" size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
+                <PlusCircle className="mr-1.5 h-4 w-4" />
                 新建项目
               </Button>
             </Link>

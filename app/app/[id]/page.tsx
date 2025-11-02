@@ -31,11 +31,11 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-1.5 h-4 w-4" />
               Save
             </Button>
             <Button variant="outline" size="sm">
-              <Share2 className="mr-2 h-4 w-4" />
+              <Share2 className="mr-1.5 h-4 w-4" />
               Share
             </Button>
           </div>
