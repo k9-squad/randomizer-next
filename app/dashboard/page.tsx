@@ -63,7 +63,10 @@ export default function DashboardPage() {
             </h1>
             {!userType || isGuest ? (
               <p className="text-muted-foreground mt-1">
-                <Link href="/login" className="text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary transition-colors">
+                <Link
+                  href="/login"
+                  className="text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary transition-colors"
+                >
                   登录
                 </Link>{" "}
                 即可保存并与世界分享您的项目

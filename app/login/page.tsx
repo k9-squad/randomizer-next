@@ -58,83 +58,83 @@ export default function LoginPage() {
                 : "创建一个账号以保存你的创作"}
             </CardDescription>
           </CardHeader>
-        <CardContent className="space-y-4">
-          {!isLogin && (
+          <CardContent className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">用户名</label>
+                <Input placeholder="输入用户名" />
+              </div>
+            )}
             <div className="space-y-2">
-              <label className="text-sm font-medium">用户名</label>
-              <Input placeholder="输入用户名" />
+              <label className="text-sm font-medium">邮箱</label>
+              <Input type="email" placeholder="name@example.com" />
             </div>
-          )}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">邮箱</label>
-            <Input type="email" placeholder="name@example.com" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">密码</label>
-            <Input type="password" placeholder="输入密码" />
-          </div>
-
-          <Button
-            className="w-full"
-            onClick={isLogin ? handleLogin : handleRegister}
-          >
-            {isLogin ? (
-              <>
-                <LogIn className="mr-1.5 h-4 w-4" />
-                登录
-              </>
-            ) : (
-              <>
-                <UserPlus className="mr-1.5 h-4 w-4" />
-                注册
-              </>
-            )}
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">密码</label>
+              <Input type="password" placeholder="输入密码" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                或
-              </span>
+
+            <Button
+              className="w-full"
+              onClick={isLogin ? handleLogin : handleRegister}
+            >
+              {isLogin ? (
+                <>
+                  <LogIn className="mr-1.5 h-4 w-4" />
+                  登录
+                </>
+              ) : (
+                <>
+                  <UserPlus className="mr-1.5 h-4 w-4" />
+                  注册
+                </>
+              )}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  或
+                </span>
+              </div>
             </div>
-          </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGuestLogin}
-          >
-            <User className="mr-1.5 h-4 w-4" />
-            以游客身份登录
-          </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGuestLogin}
+            >
+              <User className="mr-1.5 h-4 w-4" />
+              以游客身份登录
+            </Button>
 
-          <div className="text-center text-sm">
-            {isLogin ? (
-              <>
-                还没有账号？{" "}
-                <button
-                  onClick={() => setIsLogin(false)}
-                  className="text-primary hover:underline"
-                >
-                  立即注册
-                </button>
-              </>
-            ) : (
-              <>
-                已有账号？{" "}
-                <button
-                  onClick={() => setIsLogin(true)}
-                  className="text-primary hover:underline"
-                >
-                  立即登录
-                </button>
-              </>
-            )}
-          </div>
-        </CardContent>
+            <div className="text-center text-sm">
+              {isLogin ? (
+                <>
+                  还没有账号？{" "}
+                  <button
+                    onClick={() => setIsLogin(false)}
+                    className="text-primary hover:underline"
+                  >
+                    立即注册
+                  </button>
+                </>
+              ) : (
+                <>
+                  已有账号？{" "}
+                  <button
+                    onClick={() => setIsLogin(true)}
+                    className="text-primary hover:underline"
+                  >
+                    立即登录
+                  </button>
+                </>
+              )}
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>
