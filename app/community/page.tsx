@@ -139,11 +139,11 @@ export default function CommunityPage() {
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
       <div className="w-full max-w-6xl flex flex-col gap-8">
         {/* Header */}
-        <div className="flex flex-col gap-2 mt-4">
+        <div className="mt-4">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
             探索
           </h1>
-          <p className="text-muted-foreground">发现和分享创意随机器项目</p>
+          <p className="text-muted-foreground mt-1">发现和分享创意随机器项目</p>
         </div>
 
         {/* Hot Projects Section */}
@@ -289,7 +289,7 @@ export default function CommunityPage() {
             </div>
           </Link>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {categories.map((category, i) => (
               <Link key={i} href={`/community/category/${i}`}>
                 <Card
