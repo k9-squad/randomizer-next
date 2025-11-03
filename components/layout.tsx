@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Home, Users, PlusCircle, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Home, Users, PlusCircle, User, Search } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,16 +12,20 @@ import { useEffect, useState } from "react";
 export function Header() {
   const pathname = usePathname();
   const [userType, setUserType] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     setUserType(localStorage.getItem("userType"));
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center justify-between px-4 md:px-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/98 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80">
+      <div className="flex h-14 items-center justify-between px-4 md:px-6 gap-4">
         {/* Left side - Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 flex-shrink-0"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
             R
           </div>
@@ -29,40 +34,67 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Center - Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          <Link href="/dashboard">
-            <Button
-              variant={pathname === "/dashboard" ? "secondary" : "ghost"}
-              size="sm"
-            >
-              <Home className="mr-1.5 h-4 w-4" />
-              主页
-            </Button>
-          </Link>
-          <Link href="/community">
-            <Button
-              variant={pathname === "/community" ? "secondary" : "ghost"}
-              size="sm"
-            >
-              <Users className="mr-1.5 h-4 w-4" />
-              社区
-            </Button>
-          </Link>
-          <Link href="/editor/new">
-            <Button
-              variant={pathname.startsWith("/editor") ? "secondary" : "ghost"}
-              size="sm"
-            >
-              <PlusCircle className="mr-1.5 h-4 w-4" />
-              编辑器
-            </Button>
-          </Link>
-        </nav>
+        {/* Center - Mobile Search OR Desktop Navigation */}
+        <div className="flex-1 flex items-center justify-center md:justify-start">
+          {/* Mobile Search - Center */}
+          <div className="relative w-full max-w-sm md:hidden">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索项目、标签、创作者..."
+              className="pl-9 h-9"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
 
-        {/* Right side - Theme, Auth */}
-        <div className="flex items-center gap-2">
-          <ModeToggle />
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            <Link href="/dashboard">
+              <Button
+                variant={pathname === "/dashboard" ? "secondary" : "ghost"}
+                size="sm"
+              >
+                <Home className="mr-1.5 h-4 w-4" />
+                主页
+              </Button>
+            </Link>
+            <Link href="/community">
+              <Button
+                variant={pathname === "/community" ? "secondary" : "ghost"}
+                size="sm"
+              >
+                <Users className="mr-1.5 h-4 w-4" />
+                社区
+              </Button>
+            </Link>
+            <Link href="/editor/new">
+              <Button
+                variant={pathname.startsWith("/editor") ? "secondary" : "ghost"}
+                size="sm"
+              >
+                <PlusCircle className="mr-1.5 h-4 w-4" />
+                编辑器
+              </Button>
+            </Link>
+          </nav>
+        </div>
+
+        {/* Right side - Desktop Search, Theme, Auth */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {/* Desktop Search */}
+          <div className="relative hidden md:block w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索项目、标签、创作者..."
+              className="pl-9 h-9"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+
+          <div className="hidden md:block">
+            <ModeToggle />
+          </div>
           {userType ? (
             <Link href="/profile">
               <Button variant="ghost" size="sm">

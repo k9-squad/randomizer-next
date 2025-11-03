@@ -138,19 +138,15 @@ export default function CommunityPage() {
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
       <div className="w-full max-w-6xl flex flex-col gap-8">
-        {/* Header with Search */}
+        {/* Header */}
         <div className="flex flex-col gap-4 mt-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              社区广场
+              探索
             </h1>
             <p className="text-muted-foreground mt-1">
               发现和分享创意随机器项目
             </p>
-          </div>
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="搜索项目、创作者..." className="pl-9" />
           </div>
         </div>
 
