@@ -29,7 +29,7 @@ export function ProjectCard({
   tags,
 }: ProjectCardProps) {
   return (
-    <Link href={`/app/${id}`} className="flex-shrink-0 block">
+    <Link href={`/app/${id}`} className="flex-shrink-0 block" key={id}>
       <Card
         className="w-full min-w-[280px] h-[240px] transition-all duration-300 cursor-pointer overflow-hidden relative group border border-border/50 hover:border-primary/50 hover:scale-[1.02]"
         style={{

@@ -308,7 +308,6 @@ export default function CategoryDetailPage({ params }: CategoryPageProps) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {projects.map((project) => (
             <ProjectCard
-              key={project.id}
               id={project.id}
               name={project.name}
               icon={project.icon}

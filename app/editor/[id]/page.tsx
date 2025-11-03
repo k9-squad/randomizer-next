@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -35,7 +35,12 @@ import { PageHeader } from "@/components/page-header";
 import { saveProject, getProject, deleteProject } from "@/lib/storage";
 import type { ProjectConfig } from "@/types/project";
 
-export default function EditorPage({ params }: { params: { id: string } }) {
+export default function EditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
   const projectType = searchParams.get("type");
@@ -141,7 +146,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
   // Load existing project if editing
   useEffect(() => {
-    const existing = getProject(params.id);
+    const existing = getProject(id);
     if (existing) {
       setProjectName(existing.name);
       setLocationText(existing.config.locationText || "");
@@ -177,7 +182,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
         isInitialLoadRef.current = false;
       }, 100);
     }
-  }, [params.id]);
+  }, [id]);
 
   // 监听所有字段变化，标记为有未保存的更改
   useEffect(() => {
@@ -198,7 +203,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     selectedIcon,
     imageUrl,
     isPublished,
-    params.id,
+    id,
   ]);
 
   const addRotator = () => {
@@ -267,7 +272,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     };
 
     saveProject({
-      id: params.id,
+      id: id,
       name: projectName.trim(),
       config,
       isOwner: true, // 标记为自己创建的
@@ -281,7 +286,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     });
 
     setHasUnsavedChanges(false);
-    router.push(`/app/${params.id}`);
+    router.push(`/app/${id}`);
   };
 
   const handleSaveAndGoBack = () => {
@@ -303,7 +308,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = () => {
-    if (deleteProject(params.id)) {
+    if (deleteProject(id)) {
       setHasUnsavedChanges(false);
       router.push("/dashboard/my-projects");
     }

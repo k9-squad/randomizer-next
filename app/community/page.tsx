@@ -198,7 +198,6 @@ export default function CommunityPage() {
                 },
               ].map((project) => (
                 <ProjectCard
-                  key={project.id}
                   id={project.id}
                   name={project.name}
                   icon={project.icon}
@@ -264,7 +263,6 @@ export default function CommunityPage() {
                 },
               ].map((project) => (
                 <ProjectCard
-                  key={project.id}
                   id={project.id}
                   name={project.name}
                   icon={project.icon}

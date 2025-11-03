@@ -265,7 +265,6 @@ export default function CategoriesPage() {
                   category.name as keyof typeof categoryProjects
                 ].map((project) => (
                   <ProjectCard
-                    key={project.id}
                     id={project.id}
                     name={project.name}
                     icon={project.icon}

@@ -132,7 +132,6 @@ export default function DashboardPage() {
 
                   return (
                     <ProjectCard
-                      key={project.id}
                       id={project.id}
                       name={project.name}
                       icon={icon}
@@ -144,7 +143,7 @@ export default function DashboardPage() {
                     />
                   );
                 })}
-                <NewProjectCard />
+                <NewProjectCard key="new-project" />
               </HorizontalScroll>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">

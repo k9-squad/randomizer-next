@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -22,7 +22,12 @@ interface RotatorState {
   pool?: string[]; // For individual pool mode
 }
 
-export default function RandomizerPage({ params }: { params: { id: string } }) {
+export default function RandomizerPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
   const [projectName, setProjectName] = useState("随机器项目");
   const [locationText, setLocationText] = useState("");
@@ -38,7 +43,7 @@ export default function RandomizerPage({ params }: { params: { id: string } }) {
 
   // Load project data from localStorage
   useEffect(() => {
-    const project = getProject(params.id);
+    const project = getProject(id);
 
     if (project) {
       setProjectName(project.name);
@@ -69,7 +74,7 @@ export default function RandomizerPage({ params }: { params: { id: string } }) {
       // Project not found, redirect to dashboard
       router.push("/dashboard/my-projects");
     }
-  }, [params.id, router]);
+  }, [id, router]);
 
   const getRandomValue = (rotatorId: string, pool: string[]): string => {
     if (pool.length === 0) return "?";
@@ -183,7 +188,7 @@ export default function RandomizerPage({ params }: { params: { id: string } }) {
               size="icon"
               className="h-10 w-10 flex-shrink-0"
               title="编辑项目"
-              onClick={() => router.push(`/editor/${params.id}`)}
+              onClick={() => router.push(`/editor/${id}`)}
             >
               <Settings className="h-5 w-5" />
             </Button>

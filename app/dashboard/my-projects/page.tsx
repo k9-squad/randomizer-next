@@ -74,7 +74,6 @@ export default function MyProjectsPage() {
 
             return (
               <ProjectCard
-                key={project.id}
                 id={project.id}
                 name={project.name}
                 icon={icon}
@@ -86,7 +85,7 @@ export default function MyProjectsPage() {
               />
             );
           })}
-          <NewProjectCard />
+          <NewProjectCard key="new-project" />
         </div>
 
         {projects.length === 0 && (
