@@ -7,25 +7,31 @@ import {
   Shuffle,
   TrendingUp,
   Users as UsersIcon,
-  ArrowLeft,
+  ChevronLeft,
   PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function MyProjectsPage() {
   const userName = "用户";
+  const router = useRouter();
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
       <div className="w-full max-w-6xl flex flex-col gap-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => router.back()}
+              className="flex-shrink-0 -ml-1 hover:opacity-70 transition-opacity"
+            >
+              <ChevronLeft
+                className="h-9 w-9 md:h-10 md:w-10"
+                strokeWidth={2}
+              />
+            </button>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
               我的项目
             </h1>
