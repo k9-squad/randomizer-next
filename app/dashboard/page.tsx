@@ -18,20 +18,28 @@ import {
   Shuffle,
   Users as UsersIcon,
   ChevronRight,
+  type LucideIcon,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ProjectCard, NewProjectCard } from "@/components/project-card";
+import { getAllProjects, type StoredProject } from "@/lib/storage";
 
 export default function DashboardPage() {
   const [userType, setUserType] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [myProjects, setMyProjects] = useState<StoredProject[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setUserType(localStorage.getItem("userType"));
       setUserName(localStorage.getItem("userName") || "用户");
+
+      // 加载用户项目
+      const projects = getAllProjects();
+      setMyProjects(projects.filter((p) => p.isOwner !== false));
     }
   }, []);
 
@@ -100,45 +108,55 @@ export default function DashboardPage() {
 
           {/* Projects Horizontal Scroll */}
           <div className="relative">
-            <HorizontalScroll className="flex gap-4 pb-4 pl-2">
-              <ProjectCard
-                id="1"
-                name="随机选择器"
-                icon={Dices}
-                gradientFrom="hsl(220 13% 69% / 0.15)"
-                gradientTo="hsl(220 13% 69% / 0.01)"
-                creatorName={userName}
-                tags={["随机选择", "列表"]}
-              />
-              <ProjectCard
-                id="2"
-                name="团队分组"
-                icon={UsersIcon}
-                gradientFrom="hsl(330 81% 60% / 0.15)"
-                gradientTo="hsl(330 81% 60% / 0.01)"
-                creatorName={userName}
-                tags={["团队", "分组"]}
-              />
-              <ProjectCard
-                id="3"
-                name="抽奖转盘"
-                icon={Shuffle}
-                gradientFrom="hsl(262 83% 58% / 0.15)"
-                gradientTo="hsl(262 83% 58% / 0.01)"
-                creatorName={userName}
-                tags={["抽奖", "娱乐"]}
-              />
-              <ProjectCard
-                id="4"
-                name="决策助手"
-                icon={TrendingUp}
-                gradientFrom="hsl(173 80% 40% / 0.15)"
-                gradientTo="hsl(173 80% 40% / 0.01)"
-                creatorName={userName}
-                tags={["决策", "助手"]}
-              />
-              <NewProjectCard />
-            </HorizontalScroll>
+            {myProjects.length > 0 ? (
+              <HorizontalScroll className="flex gap-4 pb-4 pl-2">
+                {myProjects.map((project) => {
+                  let icon: LucideIcon | undefined;
+                  let iconUrl: string | undefined;
+
+                  if (project.iconType === "image" && project.iconUrl) {
+                    iconUrl = project.iconUrl;
+                  } else if (
+                    project.iconType === "lucide" &&
+                    project.iconName
+                  ) {
+                    icon = (Icons as any)[project.iconName] as LucideIcon;
+                  }
+
+                  const gradientFrom = project.themeColor
+                    ? `${project.themeColor}26`
+                    : "hsl(220 13% 69% / 0.15)";
+                  const gradientTo = project.themeColor
+                    ? `${project.themeColor}0d`
+                    : "hsl(220 13% 69% / 0.01)";
+
+                  return (
+                    <ProjectCard
+                      key={project.id}
+                      id={project.id}
+                      name={project.name}
+                      icon={icon}
+                      iconUrl={iconUrl}
+                      gradientFrom={gradientFrom}
+                      gradientTo={gradientTo}
+                      creatorName={userName}
+                      tags={[]}
+                    />
+                  );
+                })}
+                <NewProjectCard />
+              </HorizontalScroll>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground mb-4">还没有项目</p>
+                <Link href="/editor/new">
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    创建第一个项目
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

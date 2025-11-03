@@ -1,21 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ProjectCard, NewProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import {
   Dices,
   Shuffle,
-  TrendingUp,
-  Users as UsersIcon,
+  Sparkles,
   ChevronLeft,
   PlusCircle,
+  type LucideIcon,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAllProjects, type StoredProject } from "@/lib/storage";
 
 export default function MyProjectsPage() {
-  const userName = "用户";
   const router = useRouter();
+  const [projects, setProjects] = useState<StoredProject[]>([]);
+
+  useEffect(() => {
+    setProjects(getAllProjects());
+  }, []);
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
@@ -46,62 +53,53 @@ export default function MyProjectsPage() {
 
         {/* Projects Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <ProjectCard
-            id="1"
-            name="随机选择器"
-            icon={Dices}
-            gradientFrom="hsl(220 13% 69% / 0.15)"
-            gradientTo="hsl(220 13% 69% / 0.01)"
-            creatorName={userName}
-            tags={["随机选择", "列表"]}
-          />
-          <ProjectCard
-            id="2"
-            name="团队分组"
-            icon={UsersIcon}
-            gradientFrom="hsl(330 81% 60% / 0.15)"
-            gradientTo="hsl(330 81% 60% / 0.01)"
-            creatorName={userName}
-            tags={["团队", "分组"]}
-          />
-          <ProjectCard
-            id="3"
-            name="抽奖转盘"
-            icon={Shuffle}
-            gradientFrom="hsl(262 83% 58% / 0.15)"
-            gradientTo="hsl(262 83% 58% / 0.01)"
-            creatorName={userName}
-            tags={["抽奖", "娱乐"]}
-          />
-          <ProjectCard
-            id="4"
-            name="决策助手"
-            icon={TrendingUp}
-            gradientFrom="hsl(173 80% 40% / 0.15)"
-            gradientTo="hsl(173 80% 40% / 0.01)"
-            creatorName={userName}
-            tags={["决策", "助手"]}
-          />
-          <ProjectCard
-            id="5"
-            name="随机选择器 2"
-            icon={Dices}
-            gradientFrom="hsl(220 13% 69% / 0.15)"
-            gradientTo="hsl(220 13% 69% / 0.01)"
-            creatorName={userName}
-            tags={["随机选择", "列表"]}
-          />
-          <ProjectCard
-            id="6"
-            name="团队分组 2"
-            icon={UsersIcon}
-            gradientFrom="hsl(330 81% 60% / 0.15)"
-            gradientTo="hsl(330 81% 60% / 0.01)"
-            creatorName={userName}
-            tags={["团队", "分组"]}
-          />
+          {projects.map((project) => {
+            // 获取图标
+            let icon: LucideIcon | undefined;
+            let iconUrl: string | undefined;
+
+            if (project.iconType === "image" && project.iconUrl) {
+              iconUrl = project.iconUrl;
+            } else if (project.iconName) {
+              icon = (Icons as any)[project.iconName] as LucideIcon;
+            } else {
+              // 默认图标
+              icon = project.config.sharedPool ? Shuffle : Dices;
+            }
+
+            // 获取主题色
+            const themeColor = project.themeColor || "#a855f7";
+            const gradientFrom = `${themeColor}26`; // 15% opacity
+            const gradientTo = `${themeColor}0d`; // 5% opacity
+
+            return (
+              <ProjectCard
+                key={project.id}
+                id={project.id}
+                name={project.name}
+                icon={icon}
+                iconUrl={iconUrl}
+                gradientFrom={gradientFrom}
+                gradientTo={gradientTo}
+                creatorName="我"
+                tags={[project.config.sharedPool ? "共享池" : "独立池"]}
+              />
+            );
+          })}
           <NewProjectCard />
         </div>
+
+        {projects.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="text-lg mb-4">还没有项目</p>
+            <Link href="/editor/new">
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                创建第一个项目
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

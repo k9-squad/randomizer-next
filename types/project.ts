@@ -4,14 +4,14 @@ import { LucideIcon } from "lucide-react";
 export interface Rotator {
   id: number;
   label: string; // 轮换位名称（如"第一道菜"、"故乡是"）
-  individualPool: string[]; // 独立池数据（仅当isSharedPool=false时使用）
+  individualPool?: string[]; // 独立池数据（仅当isSharedPool=false时使用）
 }
 
 // 项目配置
 export interface ProjectConfig {
-  locationText: string; // 情景文字
+  locationText?: string; // 情景文字
   speed: number; // 轮换速度(次/秒)，默认30
-  sharedPool: string[]; // 共享池数据（仅当isSharedPool=true时使用）
+  sharedPool?: string[]; // 共享池数据（仅当isSharedPool=true时使用）
   rotators: Rotator[]; // 轮换位列表
 }
 

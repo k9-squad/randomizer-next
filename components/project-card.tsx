@@ -8,7 +8,8 @@ import { LucideIcon } from "lucide-react";
 interface ProjectCardProps {
   id: string | number;
   name: string;
-  icon: LucideIcon; // Lucide 图标
+  icon?: LucideIcon; // Lucide 图标（可选）
+  iconUrl?: string; // 自定义图片URL（可选）
   gradientFrom: string; // 渐变起始色
   gradientTo?: string; // 渐变结束色，默认透明
   creatorName: string;
@@ -20,6 +21,7 @@ export function ProjectCard({
   id,
   name,
   icon: Icon,
+  iconUrl,
   gradientFrom,
   gradientTo = "hsl(var(--background) / 0.25)",
   creatorName,
@@ -36,10 +38,18 @@ export function ProjectCard({
       >
         {/* 上部：图标区域 */}
         <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
-          <Icon
-            className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
-            strokeWidth={1.5}
-          />
+          {iconUrl ? (
+            <img
+              src={iconUrl}
+              alt={name}
+              className="h-20 w-20 object-contain group-hover:scale-110 transition-all duration-300"
+            />
+          ) : Icon ? (
+            <Icon
+              className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+              strokeWidth={1.5}
+            />
+          ) : null}
         </div>
 
         {/* 下部：文字信息区域 */}
