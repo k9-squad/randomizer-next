@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -8,6 +8,8 @@ import {
   Trash2,
   Sparkles,
   Image as ImageIcon,
+  Pipette,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import * as Icons from "lucide-react";
@@ -21,8 +23,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
-import { saveProject, getProject } from "@/lib/storage";
+import { saveProject, getProject, deleteProject } from "@/lib/storage";
 import type { ProjectConfig } from "@/types/project";
 
 export default function EditorPage({ params }: { params: { id: string } }) {
@@ -32,11 +42,25 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
   const [projectName, setProjectName] = useState("");
   const [locationText, setLocationText] = useState("");
-  const [speed, setSpeed] = useState(30);
+  const [speedLevel, setSpeedLevel] = useState<"slow" | "medium" | "fast">(
+    "medium"
+  );
   const [sharedPool, setSharedPool] = useState("");
   const [rotators, setRotators] = useState([
     { id: "1", label: "轮换位 1", individualPool: "" },
   ]);
+
+  // 速度映射
+  const speedMap = {
+    slow: 15,
+    medium: 30,
+    fast: 60,
+  };
+
+  // 分类和标签
+  const [category, setCategory] = useState("随机选择"); // 默认选择第一个分类
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   // 新增：主题色和图标
   const [themeColor, setThemeColor] = useState("#a855f7"); // 默认紫色
@@ -45,7 +69,29 @@ export default function EditorPage({ params }: { params: { id: string } }) {
   const [imageUrl, setImageUrl] = useState("");
   const [isPublished, setIsPublished] = useState(false);
 
+  // 删除确认
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // 修改追踪和确认弹窗
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [pendingPublishState, setPendingPublishState] = useState(false);
+  const isInitialLoadRef = useRef(true);
+
   const isSharedPool = projectType === "shared";
+
+  // 预设分类
+  const categories = [
+    "随机选择",
+    "团队分组",
+    "抽奖活动",
+    "决策工具",
+    "游戏娱乐",
+    "教育学习",
+    "工作效率",
+    "其他",
+  ];
 
   // 预设主题色
   const presetColors = [
@@ -59,7 +105,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     { name: "粉色", value: "#ec4899" },
   ];
 
-  // 常用图标
+  // 常用图标 - 扩展更多选项
   const commonIcons = [
     "Sparkles",
     "Dices",
@@ -76,6 +122,21 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     "Gamepad2",
     "Coffee",
     "Pizza",
+    "Users",
+    "Target",
+    "Rocket",
+    "Lightbulb",
+    "Megaphone",
+    "Calendar",
+    "Clock",
+    "MapPin",
+    "Book",
+    "Briefcase",
+    "ShoppingCart",
+    "Smile",
+    "ThumbsUp",
+    "Bookmark",
+    "Bell",
   ];
 
   // Load existing project if editing
@@ -84,9 +145,15 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     if (existing) {
       setProjectName(existing.name);
       setLocationText(existing.config.locationText || "");
-      // 确保速度在15-60范围内
+      // 根据加载的速度值设置速度级别
       const loadedSpeed = existing.config.speed;
-      setSpeed(Math.max(15, Math.min(60, loadedSpeed)));
+      if (loadedSpeed <= 15) {
+        setSpeedLevel("slow");
+      } else if (loadedSpeed <= 30) {
+        setSpeedLevel("medium");
+      } else {
+        setSpeedLevel("fast");
+      }
       setSharedPool(existing.config.sharedPool?.join("\n") || "");
       setRotators(
         existing.config.rotators.map((r) => ({
@@ -95,14 +162,44 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           individualPool: r.individualPool?.join("\n") || "",
         }))
       );
+      // 加载分类和标签
+      if (existing.category) setCategory(existing.category);
+      if (existing.tags) setTags(existing.tags);
       // 加载外观设置
       if (existing.themeColor) setThemeColor(existing.themeColor);
       if (existing.iconType) setIconType(existing.iconType);
       if (existing.iconName) setSelectedIcon(existing.iconName);
       if (existing.iconUrl) setImageUrl(existing.iconUrl);
       if (existing.isPublished) setIsPublished(existing.isPublished);
+
+      // 加载完成后，延迟设置初始加载标志为 false，开始监听变化
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+      }, 100);
     }
   }, [params.id]);
+
+  // 监听所有字段变化，标记为有未保存的更改
+  useEffect(() => {
+    // 只有在初始加载完成后才标记为有未保存的更改
+    if (!isInitialLoadRef.current) {
+      setHasUnsavedChanges(true);
+    }
+  }, [
+    projectName,
+    locationText,
+    speedLevel,
+    sharedPool,
+    rotators,
+    category,
+    tags,
+    themeColor,
+    iconType,
+    selectedIcon,
+    imageUrl,
+    isPublished,
+    params.id,
+  ]);
 
   const addRotator = () => {
     const newId = Date.now().toString();
@@ -110,11 +207,13 @@ export default function EditorPage({ params }: { params: { id: string } }) {
       ...rotators,
       { id: newId, label: `轮换位 ${rotators.length + 1}`, individualPool: "" },
     ]);
+    setHasUnsavedChanges(true);
   };
 
   const removeRotator = (id: string) => {
     if (rotators.length > 1) {
       setRotators(rotators.filter((r) => r.id !== id));
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -122,6 +221,28 @@ export default function EditorPage({ params }: { params: { id: string } }) {
     setRotators(
       rotators.map((r) => (r.id === id ? { ...r, [field]: value } : r))
     );
+    setHasUnsavedChanges(true);
+  };
+
+  const addTag = () => {
+    const trimmed = tagInput.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+      setTagInput("");
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTag();
+    }
   };
 
   const handleSave = () => {
@@ -132,7 +253,7 @@ export default function EditorPage({ params }: { params: { id: string } }) {
 
     const config: ProjectConfig = {
       locationText: locationText.trim(),
-      speed,
+      speed: speedMap[speedLevel],
       sharedPool: isSharedPool
         ? sharedPool.split("\n").filter((line) => line.trim())
         : undefined,
@@ -150,6 +271,8 @@ export default function EditorPage({ params }: { params: { id: string } }) {
       name: projectName.trim(),
       config,
       isOwner: true, // 标记为自己创建的
+      category: category, // 必选字段
+      tags: tags.length > 0 ? tags : undefined,
       themeColor,
       iconType,
       iconName: iconType === "lucide" ? selectedIcon : undefined,
@@ -157,7 +280,44 @@ export default function EditorPage({ params }: { params: { id: string } }) {
       isPublished,
     });
 
-    router.push("/dashboard/my-projects");
+    setHasUnsavedChanges(false);
+    router.push(`/app/${params.id}`);
+  };
+
+  const handleSaveAndGoBack = () => {
+    handleSave();
+    setShowUnsavedDialog(false);
+  };
+
+  const handleDiscardAndGoBack = () => {
+    setHasUnsavedChanges(false);
+    router.back();
+  };
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const handleDelete = () => {
+    if (deleteProject(params.id)) {
+      setHasUnsavedChanges(false);
+      router.push("/dashboard/my-projects");
+    }
+  };
+
+  const handlePublishToggle = (checked: boolean) => {
+    setPendingPublishState(checked);
+    setShowPublishDialog(true);
+  };
+
+  const confirmPublishChange = () => {
+    setIsPublished(pendingPublishState);
+    setShowPublishDialog(false);
+    setHasUnsavedChanges(true);
   };
 
   return (
@@ -165,12 +325,15 @@ export default function EditorPage({ params }: { params: { id: string } }) {
       <div className="w-full max-w-4xl flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <PageHeader title={isSharedPool ? "共享池项目" : "独立池项目"} />
+          <PageHeader
+            title={isSharedPool ? "共享池项目" : "独立池项目"}
+            onBack={handleBackClick}
+          />
           <Button onClick={handleSave}>保存项目</Button>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">项目设置</h2>
+        <Card className="p-6 flex flex-col gap-4">
+          <h2 className="text-xl font-semibold">项目设置</h2>
           <div className="flex flex-col gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">项目名称</label>
@@ -190,33 +353,111 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                 onChange={(e) => setLocationText(e.target.value)}
               />
             </div>
+
+            {/* 分类和标签 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 分类选择 */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  项目分类 <span className="text-destructive">*</span>
+                </label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择项目分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 标签编辑器 */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  标签（可选）
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="输入标签后按回车添加"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addTag}
+                    className="h-10 px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* 标签显示 */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <div
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
+                  >
+                    <span>{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="hover:text-destructive transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 旋转速度 */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium">旋转速度</label>
-                <span className="text-sm text-muted-foreground">
-                  {speed} 项/秒
-                </span>
+              <label className="text-sm font-medium mb-2 block">旋转速度</label>
+              <Tabs
+                value={speedLevel}
+                onValueChange={(value) =>
+                  setSpeedLevel(value as "slow" | "medium" | "fast")
+                }
+              >
+                <TabsList className="w-full grid grid-cols-3">
+                  <TabsTrigger value="slow">慢</TabsTrigger>
+                  <TabsTrigger value="medium">中</TabsTrigger>
+                  <TabsTrigger value="fast">快</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* 发布到社区 */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex-1">
+                <label className="text-sm font-medium block">发布到社区</label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  将项目分享到探索页面，让其他用户发现和使用
+                </p>
               </div>
-              <Slider
-                value={[speed]}
-                onValueChange={(value) => setSpeed(value[0])}
-                min={15}
-                max={60}
-                step={1}
-                className="w-full"
+              <Switch
+                checked={isPublished}
+                onCheckedChange={handlePublishToggle}
               />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>慢 (15)</span>
-                <span>快 (60)</span>
-              </div>
             </div>
           </div>
         </Card>
 
         {isSharedPool ? (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">共享池内容</h2>
-            <p className="text-sm text-muted-foreground mb-4">
+          <Card className="p-6 flex flex-col gap-4">
+            <h2 className="text-xl font-semibold">共享池内容</h2>
+            <p className="text-sm text-muted-foreground">
               每行一个选项，所有轮换位将从这些选项中随机选择
             </p>
             <textarea
@@ -228,8 +469,8 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           </Card>
         ) : null}
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">轮换位设置</h2>
             <Button onClick={addRotator} size="sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -287,36 +528,25 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           </div>
         </Card>
 
-        <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-          <div className="flex-shrink-0 w-1 h-1 rounded-full bg-primary mt-2" />
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">提示：</span>
-            保存后可在"我的项目"中找到此项目，点击即可使用随机器。
-          </p>
-        </div>
-
-        {/* 分隔线 */}
-        <div className="border-t my-4" />
-
         {/* 外观设置 */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">外观设置</h2>
+        <Card className="p-6 flex flex-col gap-4">
+          <h2 className="text-xl font-semibold">外观设置</h2>
           <div className="flex flex-col gap-4">
             {/* 主题色 */}
             <div>
               <label className="text-sm font-medium mb-3 block">主题色</label>
 
-              {/* 预设颜色网格 */}
-              <div className="grid grid-cols-8 gap-3 mb-4">
+              {/* 预设颜色 + Color Picker */}
+              <div className="flex flex-wrap gap-2 items-center">
                 {presetColors.map((color) => (
                   <button
                     key={color.value}
                     onClick={() => setThemeColor(color.value)}
-                    className="group relative aspect-square rounded-xl transition-all hover:scale-110"
+                    className="group relative w-10 h-10 rounded-full transition-all hover:scale-110"
                     title={color.name}
                   >
                     <div
-                      className={`absolute inset-0 rounded-xl transition-all ${
+                      className={`absolute inset-0 rounded-full transition-all ${
                         themeColor === color.value
                           ? "ring-2 ring-offset-2 ring-offset-background"
                           : ""
@@ -336,106 +566,133 @@ export default function EditorPage({ params }: { params: { id: string } }) {
                     )}
                   </button>
                 ))}
-              </div>
 
-              {/* 自定义颜色 */}
-              <div className="flex gap-3 items-center">
-                <div className="relative">
-                  <Input
-                    type="color"
-                    value={themeColor}
-                    onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-12 h-12 cursor-pointer p-1 border-2"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    value={themeColor.toUpperCase()}
-                    onChange={(e) => setThemeColor(e.target.value)}
-                    placeholder="#A855F7"
-                    className="font-mono"
-                    pattern="^#[0-9A-Fa-f]{6}$"
-                  />
-                </div>
+                {/* Color Picker 按钮 */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="relative w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:scale-110 transition-all flex items-center justify-center"
+                      title="自定义颜色"
+                    >
+                      <Pipette className="h-5 w-5 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64">
+                    <div className="flex flex-col gap-3">
+                      <label className="text-sm font-medium">自定义颜色</label>
+                      <div className="flex gap-3 items-center">
+                        <Input
+                          type="color"
+                          value={themeColor}
+                          onChange={(e) => setThemeColor(e.target.value)}
+                          className="w-16 h-16 cursor-pointer p-1 border-2"
+                        />
+                        <div className="flex-1">
+                          <Input
+                            type="text"
+                            value={themeColor.toUpperCase()}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (/^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                                setThemeColor(value);
+                              }
+                            }}
+                            placeholder="#A855F7"
+                            className="font-mono"
+                            maxLength={7}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             {/* 图标 */}
             <div>
-              <label className="text-sm font-medium mb-2 block">图标</label>
-              <div className="flex gap-2 mb-3">
-                <Button
-                  type="button"
-                  variant={iconType === "lucide" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIconType("lucide")}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  图标库
-                </Button>
-                <Button
-                  type="button"
-                  variant={iconType === "image" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIconType("image")}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  自定义图片
-                </Button>
-              </div>
+              <label className="text-sm font-medium mb-3 block">图标</label>
 
-              {iconType === "lucide" ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      {(() => {
-                        const IconComponent = (Icons as any)[
-                          selectedIcon
-                        ] as LucideIcon;
-                        return IconComponent ? (
-                          <>
-                            <IconComponent className="h-5 w-5 mr-2" />
-                            {selectedIcon}
-                          </>
-                        ) : (
-                          "选择图标"
-                        );
-                      })()}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="grid grid-cols-5 gap-2">
-                      {commonIcons.map((iconName) => {
-                        const IconComponent = (Icons as any)[
-                          iconName
-                        ] as LucideIcon;
-                        return (
-                          <button
-                            key={iconName}
-                            onClick={() => setSelectedIcon(iconName)}
-                            className={`p-3 rounded-lg hover:bg-accent transition-colors ${
-                              selectedIcon === iconName ? "bg-accent" : ""
-                            }`}
-                            title={iconName}
+              <Tabs
+                value={iconType}
+                onValueChange={(value) =>
+                  setIconType(value as "lucide" | "image")
+                }
+                className="w-full"
+              >
+                {/* 响应式布局：窄屏垂直，宽屏水平 */}
+                <div className="flex flex-col md:flex-row md:items-start gap-3">
+                  <TabsList className="w-fit">
+                    <TabsTrigger value="lucide" className="gap-1.5">
+                      <Sparkles className="h-4 w-4" />
+                      图标库
+                    </TabsTrigger>
+                    <TabsTrigger value="image" className="gap-1.5">
+                      <ImageIcon className="h-4 w-4" />
+                      自定义图片
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <div className="flex-1">
+                    <TabsContent value="lucide" className="mt-0">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start"
                           >
-                            {IconComponent && (
-                              <IconComponent className="h-5 w-5" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <Input
-                  type="url"
-                  placeholder="输入图片 URL..."
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-              )}
+                            {(() => {
+                              const IconComponent = (Icons as any)[
+                                selectedIcon
+                              ] as LucideIcon;
+                              return IconComponent ? (
+                                <>
+                                  <IconComponent className="h-5 w-5 mr-2" />
+                                  {selectedIcon}
+                                </>
+                              ) : (
+                                "选择图标"
+                              );
+                            })()}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="grid grid-cols-5 gap-2">
+                            {commonIcons.map((iconName) => {
+                              const IconComponent = (Icons as any)[
+                                iconName
+                              ] as LucideIcon;
+                              return (
+                                <button
+                                  key={iconName}
+                                  onClick={() => setSelectedIcon(iconName)}
+                                  className={`p-3 rounded-lg hover:bg-accent transition-colors ${
+                                    selectedIcon === iconName ? "bg-accent" : ""
+                                  }`}
+                                  title={iconName}
+                                >
+                                  {IconComponent && (
+                                    <IconComponent className="h-5 w-5" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </TabsContent>
+
+                    <TabsContent value="image" className="mt-0">
+                      <Input
+                        type="url"
+                        placeholder="输入图片 URL..."
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                      />
+                    </TabsContent>
+                  </div>
+                </div>
+              </Tabs>
             </div>
 
             {/* 预览 */}
@@ -481,18 +738,118 @@ export default function EditorPage({ params }: { params: { id: string } }) {
           </div>
         </Card>
 
-        {/* 发布设置 */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold">发布到社区</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                将项目分享到探索页面，让其他用户发现和使用
-              </p>
-            </div>
-            <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+        {/* 分隔线 */}
+        <div className="border-t my-2" />
+
+        {/* 删除项目 */}
+        <Card className="p-6 border-destructive/50 flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-destructive">危险区域</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              删除后无法恢复，请谨慎操作
+            </p>
           </div>
+          {!showDeleteConfirm ? (
+            <Button
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-white transition-colors"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              删除项目
+            </Button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-center">
+                确定要删除这个项目吗？
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDelete}
+                >
+                  确认删除
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
+
+        {/* 未保存更改对话框 */}
+        {showUnsavedDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="p-6 max-w-md w-full flex flex-col gap-4 relative">
+              <button
+                onClick={() => setShowUnsavedDialog(false)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div>
+                <h2 className="text-lg font-semibold">有未保存的更改</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  您有未保存的更改，确定要离开吗？
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleSaveAndGoBack} className="w-full">
+                  保存并返回
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleDiscardAndGoBack}
+                  className="w-full"
+                >
+                  放弃更改
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* 发布确认对话框 */}
+        {showPublishDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="p-6 max-w-md w-full flex flex-col gap-4 relative">
+              <button
+                onClick={() => setShowPublishDialog(false)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {pendingPublishState ? "发布到社区" : "取消发布"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {pendingPublishState
+                    ? "发布后，您的项目将出现在探索页面，其他用户可以发现和复制使用。"
+                    : "取消发布后，您的项目将从探索页面移除，但仍保留在您的项目列表中。"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPublishDialog(false)}
+                  className="flex-1"
+                >
+                  取消
+                </Button>
+                <Button onClick={confirmPublishChange} className="flex-1">
+                  确认
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

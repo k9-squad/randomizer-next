@@ -10,6 +10,9 @@ export interface StoredProject {
   updatedAt: string;
   isOwner?: boolean; // true表示自己创建的，false表示复制或官方模板
   isTemplate?: boolean; // true表示官方模板
+  // 分类和标签
+  category?: string; // 项目分类
+  tags?: string[]; // 项目标签
   // 外观设置
   themeColor?: string;
   iconType?: "lucide" | "image";
