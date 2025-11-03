@@ -139,7 +139,7 @@ export default function DashboardPage() {
                       gradientFrom={gradientFrom}
                       gradientTo={gradientTo}
                       creatorName={userName}
-                      tags={[]}
+                      tags={project.tags || []}
                     />
                   );
                 })}

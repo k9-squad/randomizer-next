@@ -81,7 +81,7 @@ export default function MyProjectsPage() {
                 gradientFrom={gradientFrom}
                 gradientTo={gradientTo}
                 creatorName="我"
-                tags={[project.config.sharedPool ? "共享池" : "独立池"]}
+                tags={project.tags || []}
               />
             );
           })}

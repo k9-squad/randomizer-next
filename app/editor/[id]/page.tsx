@@ -232,6 +232,10 @@ export default function EditorPage({
   const addTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
+      if (tags.length >= 3) {
+        alert("最多只能添加3个标签");
+        return;
+      }
       setTags([...tags, trimmed]);
       setTagInput("");
       setHasUnsavedChanges(true);
@@ -383,7 +387,7 @@ export default function EditorPage({
               {/* 标签编辑器 */}
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  标签（可选）
+                  标签（可选，最多3个）
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -392,12 +396,14 @@ export default function EditorPage({
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={handleTagInputKeyDown}
                     className="flex-1"
+                    disabled={tags.length >= 3}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={addTag}
                     className="h-10 px-3"
+                    disabled={tags.length >= 3}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

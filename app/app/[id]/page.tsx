@@ -40,6 +40,7 @@ export default function RandomizerPage({
   const [isOwner, setIsOwner] = useState(true); // 是否是自己的项目
   const intervalRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
   const previousValues = useRef<{ [key: string]: string }>({});
+  const sharedPoolRef = useRef<string[]>([]); // 使用 ref 避免闭包陷阱
 
   // Load project data from localStorage
   useEffect(() => {
@@ -58,7 +59,9 @@ export default function RandomizerPage({
       setIsSharedPool(hasSharedPool);
 
       if (hasSharedPool) {
-        setSharedPool(project.config.sharedPool || []);
+        const pool = project.config.sharedPool || [];
+        setSharedPool(pool);
+        sharedPoolRef.current = pool; // 同步到 ref
       }
 
       setRotators(
@@ -78,18 +81,18 @@ export default function RandomizerPage({
 
   const getRandomValue = (rotatorId: string, pool: string[]): string => {
     if (pool.length === 0) return "?";
-    const previous = previousValues.current[rotatorId];
-    let available = pool;
+    if (pool.length === 1) return pool[0];
 
-    // Avoid consecutive repeats
-    if (previous && pool.length > 1) {
-      available = pool.filter((item) => item !== previous);
-    }
+    // 使用 do-while 循环确保在池子大小 > 1 时，新值与上一个值不同
+    const lastValue = previousValues.current[rotatorId];
+    let newValue = "";
 
-    const randomIndex = Math.floor(Math.random() * available.length);
-    const value = available[randomIndex];
-    previousValues.current[rotatorId] = value;
-    return value;
+    do {
+      newValue = pool[Math.floor(Math.random() * pool.length)];
+    } while (newValue === lastValue && pool.length > 1);
+
+    previousValues.current[rotatorId] = newValue;
+    return newValue;
   };
 
   const startSpinning = (rotatorId: string) => {
@@ -98,7 +101,7 @@ export default function RandomizerPage({
         prev.map((r) => {
           if (r.id === rotatorId) {
             // Use individual pool if available, otherwise shared pool
-            const pool = r.pool || sharedPool;
+            const pool = r.pool || sharedPoolRef.current;
             return { ...r, currentValue: getRandomValue(rotatorId, pool) };
           }
           return r;
