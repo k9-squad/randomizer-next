@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   GripVertical,
@@ -16,7 +16,6 @@ import * as Icons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
   Popover,
@@ -35,15 +34,13 @@ import { PageHeader } from "@/components/page-header";
 import { saveProject, getProject, deleteProject } from "@/lib/storage";
 import type { ProjectConfig } from "@/types/project";
 
-export default function EditorPage({
+export default function ProjectSettingsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const projectType = searchParams.get("type");
 
   const [projectName, setProjectName] = useState("");
   const [locationText, setLocationText] = useState("");
@@ -54,7 +51,7 @@ export default function EditorPage({
   const [rotators, setRotators] = useState([
     { id: "1", label: "轮换位 1", individualPool: "" },
   ]);
-  const [isSharedPool, setIsSharedPool] = useState(projectType === "shared");
+  const [isSharedPool, setIsSharedPool] = useState(true);
 
   // 速度映射
   const speedMap = {
@@ -64,12 +61,12 @@ export default function EditorPage({
   };
 
   // 分类和标签
-  const [category, setCategory] = useState("随机选择"); // 默认选择第一个分类
+  const [category, setCategory] = useState("随机选择");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  // 新增：主题色和图标
-  const [themeColor, setThemeColor] = useState("#a855f7"); // 默认紫色
+  // 主题色和图标
+  const [themeColor, setThemeColor] = useState("#a855f7");
   const [iconType, setIconType] = useState<"lucide" | "image">("lucide");
   const [selectedIcon, setSelectedIcon] = useState("Sparkles");
   const [imageUrl, setImageUrl] = useState("");
@@ -109,7 +106,7 @@ export default function EditorPage({
     { name: "粉色", value: "#ec4899" },
   ];
 
-  // 常用图标 - 扩展更多选项
+  // 常用图标
   const commonIcons = [
     "Sparkles",
     "Dices",
@@ -143,23 +140,17 @@ export default function EditorPage({
     "Bell",
   ];
 
-  // Load existing project if editing
+  // Load existing project
   useEffect(() => {
     const existing = getProject(id);
     if (existing) {
       setProjectName(existing.name);
       setLocationText(existing.config.locationText || "");
-      // 根据加载的速度值设置速度级别
       const loadedSpeed = existing.config.speed;
-      if (loadedSpeed <= 15) {
-        setSpeedLevel("slow");
-      } else if (loadedSpeed <= 30) {
-        setSpeedLevel("medium");
-      } else {
-        setSpeedLevel("fast");
-      }
+      if (loadedSpeed <= 15) setSpeedLevel("slow");
+      else if (loadedSpeed <= 30) setSpeedLevel("medium");
+      else setSpeedLevel("fast");
 
-      // 【关键修复】根据项目配置判断是共享池还是独立池
       const hasSharedPool =
         !!existing.config.sharedPool && existing.config.sharedPool.length > 0;
       setIsSharedPool(hasSharedPool);
@@ -172,26 +163,22 @@ export default function EditorPage({
           individualPool: r.individualPool?.join("\n") || "",
         }))
       );
-      // 加载分类和标签
       if (existing.category) setCategory(existing.category);
       if (existing.tags) setTags(existing.tags);
-      // 加载外观设置
       if (existing.themeColor) setThemeColor(existing.themeColor);
       if (existing.iconType) setIconType(existing.iconType);
       if (existing.iconName) setSelectedIcon(existing.iconName);
       if (existing.iconUrl) setImageUrl(existing.iconUrl);
       if (existing.isPublished) setIsPublished(existing.isPublished);
 
-      // 加载完成后，延迟设置初始加载标志为 false，开始监听变化
       setTimeout(() => {
         isInitialLoadRef.current = false;
       }, 100);
     }
   }, [id]);
 
-  // 监听所有字段变化，标记为有未保存的更改
+  // 监听字段变化
   useEffect(() => {
-    // 只有在初始加载完成后才标记为有未保存的更改
     if (!isInitialLoadRef.current) {
       setHasUnsavedChanges(true);
     }
@@ -284,8 +271,8 @@ export default function EditorPage({
       id: id,
       name: projectName.trim(),
       config,
-      isOwner: true, // 标记为自己创建的
-      category: category, // 必选字段
+      isOwner: true,
+      category: category,
       tags: tags.length > 0 ? tags : undefined,
       themeColor,
       iconType,
@@ -295,7 +282,7 @@ export default function EditorPage({
     });
 
     setHasUnsavedChanges(false);
-    router.push(`/app/${id}`);
+    router.back();
   };
 
   const handleSaveAndGoBack = () => {
@@ -305,14 +292,14 @@ export default function EditorPage({
 
   const handleDiscardAndGoBack = () => {
     setHasUnsavedChanges(false);
-    router.push("/dashboard/my-projects");
+    router.back();
   };
 
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
       setShowUnsavedDialog(true);
     } else {
-      router.push("/dashboard/my-projects");
+      router.back();
     }
   };
 
@@ -339,15 +326,12 @@ export default function EditorPage({
       <div className="w-full max-w-4xl flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <PageHeader
-            title={isSharedPool ? "共享池项目" : "独立池项目"}
-            onBack={handleBackClick}
-          />
-          <Button onClick={handleSave}>保存项目</Button>
+          <PageHeader title="项目设置" onBack={handleBackClick} />
+          <Button onClick={handleSave}>保存设置</Button>
         </div>
 
         <Card className="p-6 flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">项目设置</h2>
+          <h2 className="text-xl font-semibold">基本信息</h2>
           <div className="flex flex-col gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">项目名称</label>
@@ -370,7 +354,6 @@ export default function EditorPage({
 
             {/* 分类和标签 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 分类选择 */}
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   项目分类 <span className="text-destructive">*</span>
@@ -389,7 +372,6 @@ export default function EditorPage({
                 </Select>
               </div>
 
-              {/* 标签编辑器 */}
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   标签（可选，最多3个）
@@ -551,8 +533,6 @@ export default function EditorPage({
             {/* 主题色 */}
             <div>
               <label className="text-sm font-medium mb-3 block">主题色</label>
-
-              {/* 预设颜色 + Color Picker */}
               <div className="flex flex-wrap gap-2 items-center">
                 {presetColors.map((color) => (
                   <button
@@ -583,7 +563,6 @@ export default function EditorPage({
                   </button>
                 ))}
 
-                {/* Color Picker 按钮 */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -628,7 +607,6 @@ export default function EditorPage({
             {/* 图标 */}
             <div>
               <label className="text-sm font-medium mb-3 block">图标</label>
-
               <Tabs
                 value={iconType}
                 onValueChange={(value) =>
@@ -636,7 +614,6 @@ export default function EditorPage({
                 }
                 className="w-full"
               >
-                {/* 响应式布局：窄屏垂直，宽屏水平 */}
                 <div className="flex flex-col md:flex-row md:items-start gap-3">
                   <TabsList className="w-fit">
                     <TabsTrigger value="lucide" className="gap-1.5">

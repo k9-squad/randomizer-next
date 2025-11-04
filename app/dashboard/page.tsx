@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
             </Link>
-            <Link href="/editor/new">
+            <Link href="/new">
               <Button variant="outline" size="sm">
                 <PlusCircle className="mr-1.5 h-4 w-4" />
                 新建项目
@@ -148,7 +148,7 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="text-muted-foreground mb-4">还没有项目</p>
-                <Link href="/editor/new">
+                <Link href="/new">
                   <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     创建第一个项目
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                 gradient: "hsl(142 76% 36% / 0.15)",
               },
             ].map((template, i) => (
-              <Link key={i} href="/editor/new">
+              <Link key={i} href="/new">
                 <Card
                   className="h-[100px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
                   style={{

@@ -92,7 +92,7 @@ export function ProjectCard({
 // 创建新项目卡片
 export function NewProjectCard() {
   return (
-    <Link href="/editor/new" className="flex-shrink-0 block">
+    <Link href="/new" className="flex-shrink-0 block">
       <Card className="w-full min-w-[280px] h-[240px] transition-all duration-300 cursor-pointer border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:scale-[1.02] bg-transparent flex items-center justify-center group">
         <div className="flex flex-col items-center gap-3">
           <div className="h-16 w-16 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">

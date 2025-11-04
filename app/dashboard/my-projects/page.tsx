@@ -43,7 +43,7 @@ export default function MyProjectsPage() {
               我的项目
             </h1>
           </div>
-          <Link href="/editor/new">
+          <Link href="/new">
             <Button>
               <PlusCircle className="mr-1.5 h-4 w-4" />
               新建项目
@@ -91,7 +91,7 @@ export default function MyProjectsPage() {
         {projects.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg mb-4">还没有项目</p>
-            <Link href="/editor/new">
+            <Link href="/new">
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 创建第一个项目

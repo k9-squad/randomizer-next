@@ -4,18 +4,78 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Database, List, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { saveProject } from "@/lib/storage";
 
 export default function NewProjectPage() {
   const router = useRouter();
 
   const handleCreateShared = () => {
     const newId = `shared-${Date.now()}`;
-    router.push(`/editor/${newId}?type=shared`);
+
+    // 创建带默认值的共享池项目
+    saveProject({
+      id: newId,
+      name: "新建项目",
+      config: {
+        locationText: "",
+        speed: 30,
+        sharedPool: ["选项1", "选项2", "选项3"],
+        rotators: [
+          { id: 1, label: "轮换位 1" },
+          { id: 2, label: "轮换位 2" },
+          { id: 3, label: "轮换位 3" },
+        ],
+      },
+      isOwner: true,
+      category: "随机选择",
+      themeColor: "#a855f7",
+      iconType: "lucide",
+      iconName: "Sparkles",
+      isPublished: false,
+    });
+
+    // 直接跳转到项目页面
+    router.push(`/app/${newId}`);
   };
 
   const handleCreateIndividual = () => {
     const newId = `individual-${Date.now()}`;
-    router.push(`/editor/${newId}?type=individual`);
+
+    // 创建带默认值的独立池项目
+    saveProject({
+      id: newId,
+      name: "新建项目",
+      config: {
+        locationText: "",
+        speed: 30,
+        rotators: [
+          {
+            id: 1,
+            label: "轮换位 1",
+            individualPool: ["选项1", "选项2", "选项3"],
+          },
+          {
+            id: 2,
+            label: "轮换位 2",
+            individualPool: ["选项1", "选项2", "选项3"],
+          },
+          {
+            id: 3,
+            label: "轮换位 3",
+            individualPool: ["选项1", "选项2", "选项3"],
+          },
+        ],
+      },
+      isOwner: true,
+      category: "随机选择",
+      themeColor: "#a855f7",
+      iconType: "lucide",
+      iconName: "Sparkles",
+      isPublished: false,
+    });
+
+    // 直接跳转到项目页面
+    router.push(`/app/${newId}`);
   };
 
   return (
@@ -59,9 +119,9 @@ export default function NewProjectPage() {
                   典型案例
                 </p>
                 <div className="flex flex-col gap-1 text-sm">
-                  <p className="text-foreground/80"> 中午吃什么</p>
-                  <p className="text-foreground/80"> 抽奖活动</p>
-                  <p className="text-foreground/80"> 守望先锋穿越</p>
+                  <p className="text-foreground/80">• 中午吃什么</p>
+                  <p className="text-foreground/80">• 抽奖活动</p>
+                  <p className="text-foreground/80">• 守望先锋穿越</p>
                 </div>
               </div>
 
@@ -100,9 +160,9 @@ export default function NewProjectPage() {
                   典型案例
                 </p>
                 <div className="flex flex-col gap-1 text-sm">
-                  <p className="text-foreground/80"> COC人设车卡</p>
-                  <p className="text-foreground/80"> 随机超能力</p>
-                  <p className="text-foreground/80"> 角色生成器</p>
+                  <p className="text-foreground/80">• COC人设车卡</p>
+                  <p className="text-foreground/80">• 随机超能力</p>
+                  <p className="text-foreground/80">• 角色生成器</p>
                 </div>
               </div>
 
@@ -118,7 +178,7 @@ export default function NewProjectPage() {
           <div className="flex-shrink-0 w-1 h-1 rounded-full bg-primary mt-2" />
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">提示：</span>
-            创建后你可以随时修改项目设置、添加轮换位和编辑池子内容。不确定选哪个？试试共享池模板，它更简单易用。
+            创建后，项目会带有默认的占位内容。点击右上角的设置按钮即可编辑项目内容和配置。
           </p>
         </div>
       </div>

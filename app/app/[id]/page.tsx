@@ -199,8 +199,8 @@ export default function RandomizerPage({
               variant="ghost"
               size="icon"
               className="h-10 w-10 flex-shrink-0"
-              title="编辑项目"
-              onClick={() => router.push(`/editor/${id}`)}
+              title="项目设置"
+              onClick={() => router.push(`/app/${id}/settings`)}
             >
               <Settings className="h-5 w-5" />
             </Button>

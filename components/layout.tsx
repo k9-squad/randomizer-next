@@ -67,13 +67,13 @@ export function Header() {
                 社区
               </Button>
             </Link>
-            <Link href="/editor/new">
+            <Link href="/new">
               <Button
-                variant={pathname.startsWith("/editor") ? "secondary" : "ghost"}
+                variant={pathname === "/new" ? "secondary" : "ghost"}
                 size="sm"
               >
                 <PlusCircle className="mr-1.5 h-4 w-4" />
-                编辑器
+                新建
               </Button>
             </Link>
           </nav>
@@ -139,12 +139,10 @@ export function BottomNav() {
           <Users className="h-6 w-6" />
         </Link>
         <Link
-          href="/editor/new"
+          href="/new"
           className={cn(
             "flex items-center justify-center flex-1 py-2",
-            pathname.startsWith("/editor")
-              ? "text-primary"
-              : "text-muted-foreground"
+            pathname === "/new" ? "text-primary" : "text-muted-foreground"
           )}
         >
           <PlusCircle className="h-6 w-6" />
