@@ -72,8 +72,11 @@ export default function ProjectSettingsPage({
 
   // 分组模式状态
   const [members, setMembers] = useState("");
-  const [groupCount, setGroupCount] = useState(3);
-  const [groupNames, setGroupNames] = useState<string[]>([]);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([
+    { id: "1", name: "第 1 组" },
+    { id: "2", name: "第 2 组" },
+    { id: "3", name: "第 3 组" },
+  ]);
 
   // 速度映射
   const speedMap = {
@@ -191,13 +194,22 @@ export default function ProjectSettingsPage({
       } else if (existing.config.mode === "grouping") {
         setMode("grouping");
         setMembers(existing.config.members.join("\n"));
-        setGroupCount(existing.config.groupCount);
-        // 加载自定义组名
+        // 加载组列表
         if (existing.config.groups && existing.config.groups.length > 0) {
-          const customNames = existing.config.groups.map((g) =>
-            g.name !== `第 ${g.id} 组` ? g.name : ""
+          setGroups(
+            existing.config.groups.map((g) => ({
+              id: g.id.toString(),
+              name: g.name,
+            }))
           );
-          setGroupNames(customNames);
+        } else {
+          // 如果没有组信息，根据 groupCount 创建默认组
+          setGroups(
+            Array.from({ length: existing.config.groupCount }, (_, i) => ({
+              id: (i + 1).toString(),
+              name: `第 ${i + 1} 组`,
+            }))
+          );
         }
       }
       if (existing.category) setCategory(existing.category);
@@ -229,8 +241,7 @@ export default function ProjectSettingsPage({
     drawMode,
     allowDuplicates,
     members,
-    groupCount,
-    groupNames,
+    groups,
     category,
     tags,
     themeColor,
@@ -287,6 +298,25 @@ export default function ProjectSettingsPage({
       e.preventDefault();
       addTag();
     }
+  };
+
+  // 分组管理函数
+  const addGroup = () => {
+    const newId = Date.now().toString();
+    setGroups([...groups, { id: newId, name: `第 ${groups.length + 1} 组` }]);
+    setHasUnsavedChanges(true);
+  };
+
+  const removeGroup = (id: string) => {
+    if (groups.length > 1) {
+      setGroups(groups.filter((g) => g.id !== id));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const updateGroup = (id: string, name: string) => {
+    setGroups(groups.map((g) => (g.id === id ? { ...g, name } : g)));
+    setHasUnsavedChanges(true);
   };
 
   const handleSave = () => {
@@ -351,16 +381,16 @@ export default function ProjectSettingsPage({
         .filter((m) => m);
 
       // 验证配置
-      const validation = validateGroupingConfig(memberList, groupCount);
+      const validation = validateGroupingConfig(memberList, groups.length);
       if (!validation.valid) {
         alert(validation.error);
         return;
       }
 
       // 构建自定义组名的groups（仅包含组名，成员稍后生成）
-      const customGroups = Array.from({ length: groupCount }, (_, i) => ({
-        id: i + 1,
-        name: groupNames[i]?.trim() || `第 ${i + 1} 组`,
+      const customGroups = groups.map((g, index) => ({
+        id: index + 1,
+        name: g.name.trim() || `第 ${index + 1} 组`,
         members: [], // 运行时填充
       }));
 
@@ -369,7 +399,7 @@ export default function ProjectSettingsPage({
         locationText: locationText.trim(),
         speed: speedMap[speedLevel],
         members: memberList,
-        groupCount: groupCount,
+        groupCount: groups.length,
         groups: customGroups, // 保存包含自定义名称的空组
       } as GroupingConfig;
     }
@@ -526,22 +556,26 @@ export default function ProjectSettingsPage({
               </div>
             )}
 
-            {/* 旋转速度 */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">旋转速度</label>
-              <Tabs
-                value={speedLevel}
-                onValueChange={(value) =>
-                  setSpeedLevel(value as "slow" | "medium" | "fast")
-                }
-              >
-                <TabsList className="w-full grid grid-cols-3">
-                  <TabsTrigger value="slow">慢</TabsTrigger>
-                  <TabsTrigger value="medium">中</TabsTrigger>
-                  <TabsTrigger value="fast">快</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            {/* 旋转速度（仅抽奖模式） */}
+            {mode === "lottery" && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  旋转速度
+                </label>
+                <Tabs
+                  value={speedLevel}
+                  onValueChange={(value) =>
+                    setSpeedLevel(value as "slow" | "medium" | "fast")
+                  }
+                >
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="slow">慢</TabsTrigger>
+                    <TabsTrigger value="medium">中</TabsTrigger>
+                    <TabsTrigger value="fast">快</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
 
             {/* 发布到社区 */}
             <div className="flex items-center justify-between pt-2 border-t">
@@ -771,46 +805,65 @@ export default function ProjectSettingsPage({
             </Card>
 
             <Card className="p-6 flex flex-col gap-4">
-              <h2 className="text-xl font-semibold">分组设置</h2>
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  分组数量 <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={groupCount}
-                  onChange={(e) =>
-                    setGroupCount(Math.max(1, parseInt(e.target.value) || 1))
-                  }
-                  placeholder="请输入分组数量"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  💡 系统会自动均匀分配成员到各组，确保每组人数尽可能接近
-                </p>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">分组设置</h2>
+                <Button onClick={addGroup} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  添加分组
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {groups.map((group, index) => (
+                  <Card key={group.id} className="p-4 bg-secondary/20">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          placeholder={`第 ${index + 1} 组`}
+                          value={group.name}
+                          onChange={(e) =>
+                            updateGroup(group.id, e.target.value)
+                          }
+                        />
+                      </div>
+                      {groups.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeGroup(group.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                ))}
               </div>
 
               {/* 实时预览分组情况 */}
-              {members.trim() && groupCount > 0 && (
-                <div className="mt-2 p-4 bg-muted/50 rounded-lg">
+              {members.trim() && groups.length > 0 && (
+                <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-2">预计分组情况：</p>
                   {(() => {
                     const memberCount = members
                       .split("\n")
                       .filter((m) => m.trim()).length;
-                    if (memberCount < groupCount) {
+                    if (memberCount < groups.length) {
                       return (
                         <p className="text-sm text-destructive">
-                          ⚠️ 成员数量（{memberCount}）少于分组数量（{groupCount}
+                          ⚠️ 成员数量（{memberCount}）少于分组数量（
+                          {groups.length}
                           ），请增加成员或减少分组数
                         </p>
                       );
                     }
-                    const baseSize = Math.floor(memberCount / groupCount);
-                    const remainder = memberCount % groupCount;
+                    const baseSize = Math.floor(memberCount / groups.length);
+                    const remainder = memberCount % groups.length;
                     const groupsWithExtra = remainder;
-                    const groupsWithBase = groupCount - remainder;
+                    const groupsWithBase = groups.length - remainder;
 
                     return (
                       <div className="text-sm text-muted-foreground space-y-1">
@@ -829,33 +882,6 @@ export default function ProjectSettingsPage({
                   })()}
                 </div>
               )}
-            </Card>
-
-            {/* 自定义组名 */}
-            <Card className="p-6 flex flex-col gap-4">
-              <h2 className="text-xl font-semibold">自定义组名（可选）</h2>
-              <p className="text-sm text-muted-foreground">
-                为每个组设置自定义名称。如不设置，将使用默认名称（第 1 组、第 2
-                组...）
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Array.from({ length: groupCount }, (_, i) => (
-                  <div key={i}>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      第 {i + 1} 组
-                    </label>
-                    <Input
-                      placeholder={`第 ${i + 1} 组`}
-                      value={groupNames[i] || ""}
-                      onChange={(e) => {
-                        const newNames = [...groupNames];
-                        newNames[i] = e.target.value;
-                        setGroupNames(newNames);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
             </Card>
           </>
         )}
