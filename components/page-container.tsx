@@ -20,7 +20,9 @@ export function PageContainer({
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">
-      <div className={cn("w-full flex flex-col gap-8", maxWidthClass, className)}>
+      <div
+        className={cn("w-full flex flex-col gap-8", maxWidthClass, className)}
+      >
         {children}
       </div>
     </div>

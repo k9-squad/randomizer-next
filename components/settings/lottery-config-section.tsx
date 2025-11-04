@@ -2,7 +2,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
 interface LotteryConfigSectionProps {
@@ -87,21 +93,28 @@ export function LotteryConfigSection({
         </div>
 
         {/* 重复/不重复 */}
-        {poolType === "shared" && drawMode === "unlimited" && rotators.length > 1 && (
-          <div className="pt-2 border-t">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <label className="text-sm font-medium block">允许重复结果</label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {allowDuplicates
-                    ? "不同轮换位可以抽到相同的内容"
-                    : "不同轮换位不能抽到相同的内容"}
-                </p>
+        {poolType === "shared" &&
+          drawMode === "unlimited" &&
+          rotators.length > 1 && (
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <label className="text-sm font-medium block">
+                    允许重复结果
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {allowDuplicates
+                      ? "不同轮换位可以抽到相同的内容"
+                      : "不同轮换位不能抽到相同的内容"}
+                  </p>
+                </div>
+                <Switch
+                  checked={allowDuplicates}
+                  onCheckedChange={onAllowDuplicatesChange}
+                />
               </div>
-              <Switch checked={allowDuplicates} onCheckedChange={onAllowDuplicatesChange} />
             </div>
-          </div>
-        )}
+          )}
 
         {/* 不放回模式提示 */}
         {drawMode === "limited" && (
@@ -153,7 +166,9 @@ export function LotteryConfigSection({
                   <Input
                     placeholder="轮换位标签"
                     value={rotator.label}
-                    onChange={(e) => onUpdateRotator(rotator.id, "label", e.target.value)}
+                    onChange={(e) =>
+                      onUpdateRotator(rotator.id, "label", e.target.value)
+                    }
                   />
                   {!isSharedPool && (
                     <div>
@@ -165,14 +180,19 @@ export function LotteryConfigSection({
                         placeholder="选项1\n选项2\n选项3"
                         value={rotator.individualPool}
                         onChange={(e) =>
-                          onUpdateRotator(rotator.id, "individualPool", e.target.value)
+                          onUpdateRotator(
+                            rotator.id,
+                            "individualPool",
+                            e.target.value
+                          )
                         }
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         当前选项数：
                         {
-                          rotator.individualPool.split("\n").filter((line) => line.trim())
-                            .length
+                          rotator.individualPool
+                            .split("\n")
+                            .filter((line) => line.trim()).length
                         }
                       </p>
                     </div>

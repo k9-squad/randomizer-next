@@ -19,7 +19,9 @@ import {
 } from "@/lib/mock-data";
 
 export default function CommunityPage() {
-  const [luckyProjects, setLuckyProjects] = useState(() => getRandomProjects(2));
+  const [luckyProjects, setLuckyProjects] = useState(() =>
+    getRandomProjects(2)
+  );
 
   const refreshLuckyProjects = () => {
     setLuckyProjects(getRandomProjects(2));

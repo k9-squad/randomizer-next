@@ -7,7 +7,11 @@ interface ProjectGridProps {
   className?: string;
 }
 
-export function ProjectGrid({ children, columns = 3, className }: ProjectGridProps) {
+export function ProjectGrid({
+  children,
+  columns = 3,
+  className,
+}: ProjectGridProps) {
   const colsClass = {
     2: "sm:grid-cols-2",
     3: "sm:grid-cols-2 lg:grid-cols-3",
@@ -15,8 +19,6 @@ export function ProjectGrid({ children, columns = 3, className }: ProjectGridPro
   }[columns];
 
   return (
-    <div className={cn("grid gap-4", colsClass, className)}>
-      {children}
-    </div>
+    <div className={cn("grid gap-4", colsClass, className)}>{children}</div>
   );
 }

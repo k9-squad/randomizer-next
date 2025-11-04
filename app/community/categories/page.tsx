@@ -12,6 +12,8 @@ import {
   Hash,
   Grid3x3,
   ChevronLeft,
+  Sparkles,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,7 +29,7 @@ export default function CategoriesPage() {
       description: "从多个选项中随机选择一个或多个",
     },
     {
-      name: "团队协作",
+      name: "团队分组",
       icon: UsersIcon,
       gradient: "hsl(330 81% 60% / 0.15)",
       count: 95,
@@ -41,23 +43,37 @@ export default function CategoriesPage() {
       description: "各类抽奖、转盘、摇奖工具",
     },
     {
-      name: "决策辅助",
+      name: "决策工具",
       icon: Zap,
       gradient: "hsl(173 80% 40% / 0.15)",
       count: 87,
       description: "帮助快速做出选择和决定",
     },
     {
-      name: "数字生成",
+      name: "游戏娱乐",
+      icon: Sparkles,
+      gradient: "hsl(262 83% 58% / 0.15)",
+      count: 78,
+      description: "趣味游戏、娱乐互动工具",
+    },
+    {
+      name: "教育学习",
+      icon: Target,
+      gradient: "hsl(142 76% 36% / 0.15)",
+      count: 56,
+      description: "课堂互动、学习辅助工具",
+    },
+    {
+      name: "工作效率",
       icon: Hash,
       gradient: "hsl(45 93% 47% / 0.15)",
       count: 64,
-      description: "随机数字、号码、密码生成器",
+      description: "提升工作效率的随机化工具",
     },
     {
       name: "其他",
       icon: Grid3x3,
-      gradient: "hsl(142 76% 36% / 0.15)",
+      gradient: "hsl(210 40% 96% / 0.15)",
       count: 43,
       description: "其他创意随机器工具",
     },
@@ -91,7 +107,7 @@ export default function CategoriesPage() {
         tags: ["色子", "幸运"],
       },
     ],
-    团队协作: [
+    团队分组: [
       {
         id: 2,
         name: "团队匹配",
@@ -143,7 +159,7 @@ export default function CategoriesPage() {
         tags: ["洗牌", "工具"],
       },
     ],
-    决策辅助: [
+    决策工具: [
       {
         id: 4,
         name: "快速决策",
@@ -169,7 +185,59 @@ export default function CategoriesPage() {
         tags: ["速度", "决定"],
       },
     ],
-    数字生成: [
+    游戏娱乐: [
+      {
+        id: 5,
+        name: "名字生成",
+        icon: Sparkles,
+        gradient: "hsl(45 93% 47% / 0.15)",
+        creator: "孙七",
+        tags: ["名字", "生成"],
+      },
+      {
+        id: 16,
+        name: "幸运骰子",
+        icon: Dices,
+        gradient: "hsl(262 83% 58% / 0.15)",
+        creator: "郑十",
+        tags: ["骰子", "游戏"],
+      },
+      {
+        id: 20,
+        name: "灵感激发",
+        icon: Sparkles,
+        gradient: "hsl(330 81% 60% / 0.15)",
+        creator: "卫十四",
+        tags: ["灵感", "创意"],
+      },
+    ],
+    教育学习: [
+      {
+        id: 10,
+        name: "目标选择",
+        icon: Target,
+        gradient: "hsl(330 81% 60% / 0.15)",
+        creator: "小张",
+        tags: ["目标", "选择"],
+      },
+      {
+        id: 15,
+        name: "目标选择器",
+        icon: Target,
+        gradient: "hsl(330 81% 60% / 0.15)",
+        creator: "吴九",
+        tags: ["目标", "选择"],
+      },
+      {
+        id: 19,
+        name: "快速投票",
+        icon: Zap,
+        gradient: "hsl(45 93% 47% / 0.15)",
+        creator: "褚十三",
+        tags: ["投票", "决策"],
+      },
+    ],
+    工作效率: [
       {
         id: 11,
         name: "随机数字",
@@ -187,12 +255,12 @@ export default function CategoriesPage() {
         tags: ["数字", "幸运"],
       },
       {
-        id: 32,
-        name: "号码生成",
-        icon: Hash,
-        gradient: "hsl(220 13% 69% / 0.15)",
-        creator: "卫十四",
-        tags: ["号码", "生成"],
+        id: 18,
+        name: "随机排序",
+        icon: Shuffle,
+        gradient: "hsl(173 80% 40% / 0.15)",
+        creator: "陈十二",
+        tags: ["排序", "随机"],
       },
     ],
   };

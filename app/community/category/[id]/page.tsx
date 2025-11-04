@@ -10,6 +10,8 @@ import {
   Hash,
   Grid3x3,
   ChevronLeft,
+  Sparkles,
+  Target,
 } from "lucide-react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +33,7 @@ export default function CategoryDetailPage({ params }: CategoryPageProps) {
       description: "从多个选项中随机选择一个或多个",
     },
     {
-      name: "团队协作",
+      name: "团队分组",
       icon: UsersIcon,
       gradient: "hsl(330 81% 60% / 0.15)",
       description: "团队分组、成员匹配等协作工具",
@@ -43,21 +45,33 @@ export default function CategoryDetailPage({ params }: CategoryPageProps) {
       description: "各类抽奖、转盘、摇奖工具",
     },
     {
-      name: "决策辅助",
+      name: "决策工具",
       icon: Zap,
       gradient: "hsl(173 80% 40% / 0.15)",
       description: "帮助快速做出选择和决定",
     },
     {
-      name: "数字生成",
+      name: "游戏娱乐",
+      icon: Sparkles,
+      gradient: "hsl(262 83% 58% / 0.15)",
+      description: "趣味游戏、娱乐互动工具",
+    },
+    {
+      name: "教育学习",
+      icon: Target,
+      gradient: "hsl(142 76% 36% / 0.15)",
+      description: "课堂互动、学习辅助工具",
+    },
+    {
+      name: "工作效率",
       icon: Hash,
       gradient: "hsl(45 93% 47% / 0.15)",
-      description: "随机数字、号码、密码生成器",
+      description: "提升工作效率的随机化工具",
     },
     {
       name: "其他",
       icon: Grid3x3,
-      gradient: "hsl(142 76% 36% / 0.15)",
+      gradient: "hsl(210 40% 96% / 0.15)",
       description: "其他创意随机器工具",
     },
   ];
