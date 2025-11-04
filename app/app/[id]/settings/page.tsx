@@ -464,7 +464,9 @@ export default function ProjectSettingsPage({
         {/* Header */}
         <div className="flex items-center justify-between">
           <PageHeader title="项目设置" onBack={handleBackClick} />
-          <Button onClick={handleSave}>保存设置</Button>
+          <Button onClick={handleSave} disabled={!hasUnsavedChanges}>
+            保存设置
+          </Button>
         </div>
 
         <Card className="p-6 flex flex-col gap-4">
@@ -717,13 +719,7 @@ export default function ProjectSettingsPage({
             ) : null}
 
             <Card className="p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">轮换位设置</h2>
-                <Button onClick={addRotator} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  添加轮换位
-                </Button>
-              </div>
+              <h2 className="text-xl font-semibold">轮换位设置</h2>
 
               <div className="flex flex-col gap-4">
                 {rotators.map((rotator) => (
@@ -780,6 +776,15 @@ export default function ProjectSettingsPage({
                     </div>
                   </Card>
                 ))}
+                
+                {/* 添加轮换位按钮 */}
+                <button
+                  onClick={addRotator}
+                  className="p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 hover:bg-muted/30 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="text-sm font-medium">添加轮换位</span>
+                </button>
               </div>
             </Card>
           </>
@@ -805,13 +810,7 @@ export default function ProjectSettingsPage({
             </Card>
 
             <Card className="p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">分组设置</h2>
-                <Button onClick={addGroup} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  添加分组
-                </Button>
-              </div>
+              <h2 className="text-xl font-semibold">分组设置</h2>
 
               <div className="flex flex-col gap-4">
                 {groups.map((group, index) => (
@@ -841,6 +840,15 @@ export default function ProjectSettingsPage({
                     </div>
                   </Card>
                 ))}
+                
+                {/* 添加分组按钮 */}
+                <button
+                  onClick={addGroup}
+                  className="p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 hover:bg-muted/30 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="text-sm font-medium">添加分组</span>
+                </button>
               </div>
 
               {/* 实时预览分组情况 */}
@@ -928,8 +936,19 @@ export default function ProjectSettingsPage({
                     <button
                       className="relative w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:scale-110 transition-all flex items-center justify-center"
                       title="自定义颜色"
+                      style={{
+                        backgroundColor: !presetColors.some(
+                          (c) => c.value === themeColor
+                        )
+                          ? themeColor
+                          : "transparent",
+                      }}
                     >
-                      <Pipette className="h-5 w-5 text-muted-foreground" />
+                      {presetColors.some((c) => c.value === themeColor) ? (
+                        <Pipette className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-white shadow-lg" />
+                      )}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64">
@@ -1090,6 +1109,27 @@ export default function ProjectSettingsPage({
             </div>
           </div>
         </Card>
+
+        {/* 保存并返回按钮 - 只在有未保存更改时显示 */}
+        {hasUnsavedChanges && (
+          <div className="flex gap-3">
+            <Button
+              onClick={handleDiscardAndGoBack}
+              variant="outline"
+              size="lg"
+              className="flex-1"
+            >
+              放弃更改
+            </Button>
+            <Button
+              onClick={handleSave}
+              size="lg"
+              className="flex-1"
+            >
+              保存并返回
+            </Button>
+          </div>
+        )}
 
         {/* 分隔线 */}
         <div className="border-t my-2" />

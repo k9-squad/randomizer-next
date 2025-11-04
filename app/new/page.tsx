@@ -209,24 +209,6 @@ export default function NewProjectPage() {
             创建后，项目会带有默认的占位内容。点击项目页面右上角的设置按钮即可编辑项目内容和配置。
           </p>
         </div>
-
-        <div className="flex flex-col gap-4 p-5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <h3 className="font-semibold text-foreground">💡 两种模式的区别</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium text-foreground mb-2">抽奖模式</p>
-              <p className="text-muted-foreground leading-relaxed">
-                适合需要多次独立抽取的场景。例如"今天吃什么"项目中，第一道菜、第二道菜、第三道菜分别独立抽取。
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-foreground mb-2">分组模式</p>
-              <p className="text-muted-foreground leading-relaxed">
-                适合需要将人员分配到不同组的场景。例如将30名学生随机分成10个小组，系统会自动均匀分配人数。
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
