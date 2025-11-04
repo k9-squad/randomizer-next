@@ -52,7 +52,11 @@ export default function NewProjectPage() {
       speed: 30,
       members: ["成员1", "成员2", "成员3", "成员4", "成员5", "成员6"],
       groupCount: 3,
-      groups: [], // 初始为空，运行时生成
+      groups: [
+        { id: 1, name: "第 1 组", members: [] },
+        { id: 2, name: "第 2 组", members: [] },
+        { id: 3, name: "第 3 组", members: [] },
+      ], // 初始包含默认组名，成员运行时生成
     };
 
     saveProject({

@@ -6,6 +6,7 @@ import { Group } from "@/types/project";
  * 
  * @param members 成员列表
  * @param groupCount 分组数量
+ * @param existingGroups 现有的组配置（可选，用于保留自定义组名）
  * @returns 分组结果
  * 
  * 算法原理：
@@ -17,7 +18,8 @@ import { Group } from "@/types/project";
  */
 export function distributeMembers(
   members: string[],
-  groupCount: number
+  groupCount: number,
+  existingGroups?: Group[]
 ): Group[] {
   if (groupCount <= 0) {
     throw new Error("分组数量必须大于0");
@@ -54,9 +56,14 @@ export function distributeMembers(
       memberIndex + groupSizes[i]
     );
     
+    // 尝试从现有组中获取自定义名称，否则使用默认名称
+    const customName = existingGroups && existingGroups[i]?.name
+      ? existingGroups[i].name
+      : `第 ${i + 1} 组`;
+    
     groups.push({
       id: i + 1,
-      name: `第 ${i + 1} 组`,
+      name: customName,
       members: groupMembers,
     });
 

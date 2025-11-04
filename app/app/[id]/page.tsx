@@ -50,6 +50,7 @@ export default function RandomizerPage({
 
   // 抽奖模式状态
   const [rotators, setRotators] = useState<RotatorState[]>([]);
+  const rotatorsRef = useRef<RotatorState[]>([]); // 保持最新的 rotators 引用
   const [sharedPool, setSharedPool] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -57,26 +58,89 @@ export default function RandomizerPage({
   const previousValues = useRef<{ [key: string]: string }>({});
   const sharedPoolRef = useRef<string[]>([]);
 
+  // 抽奖配置
+  const [drawMode, setDrawMode] = useState<"unlimited" | "limited">(
+    "unlimited"
+  );
+  const [allowDuplicates, setAllowDuplicates] = useState(true);
+  const [poolType, setPoolType] = useState<"shared" | "individual">("shared");
+
+  // 不放回模式：跟踪已使用的选项
+  const usedValuesRef = useRef<Set<string>>(new Set());
+  // 不允许重复：跟踪当前轮的已抽取值
+  const currentRoundValues = useRef<Set<string>>(new Set());
+
+  // 计算剩余池子大小（不放回模式）
+  const getRemainingPoolSize = useCallback((): number => {
+    if (drawMode !== "limited") return Infinity;
+
+    if (poolType === "shared") {
+      return sharedPoolRef.current.length - usedValuesRef.current.size;
+    } else {
+      // 独立池模式：返回最小的剩余池子大小
+      const remainingSizes = rotators.map((r) => {
+        const pool = r.pool || [];
+        return (
+          pool.length -
+          Array.from(usedValuesRef.current).filter((v) => pool.includes(v))
+            .length
+        );
+      });
+      return remainingSizes.length > 0 ? Math.min(...remainingSizes) : 0;
+    }
+  }, [drawMode, poolType, rotators]);
+
   // 分组模式状态
   const [groups, setGroups] = useState<GroupState[]>([]);
   const [isGrouping, setIsGrouping] = useState(false);
 
   const getRandomValue = useCallback(
-    (rotatorId: string, pool: string[]): string => {
+    (
+      rotatorId: string,
+      pool: string[],
+      config: { drawMode: string; allowDuplicates: boolean }
+    ): string => {
       if (pool.length === 0) return "?";
-      if (pool.length === 1) return pool[0];
 
+      // 计算可用选项
+      let availablePool = [...pool];
+
+      // 不放回模式：移除已使用的选项
+      if (config.drawMode === "limited") {
+        availablePool = availablePool.filter(
+          (item) => !usedValuesRef.current.has(item)
+        );
+        if (availablePool.length === 0) return "?"; // 池子已空
+      }
+
+      // 不允许重复：移除当前轮已抽取的值
+      if (!config.allowDuplicates && config.drawMode === "unlimited") {
+        availablePool = availablePool.filter(
+          (item) => !currentRoundValues.current.has(item)
+        );
+        if (availablePool.length === 0) {
+          // 如果所有选项都被使用了，重置当前轮
+          currentRoundValues.current.clear();
+          availablePool = [...pool];
+        }
+      }
+
+      if (availablePool.length === 0) return "?";
+      if (availablePool.length === 1) return availablePool[0];
+
+      // 避免连续相同值
       const lastValue = previousValues.current[rotatorId];
       let newValue = "";
       let attempts = 0;
-      const maxAttempts = pool.length * 2; // 防止无限循环
+      const maxAttempts = availablePool.length * 2;
 
       do {
-        newValue = pool[Math.floor(Math.random() * pool.length)];
+        newValue =
+          availablePool[Math.floor(Math.random() * availablePool.length)];
         attempts++;
       } while (
         newValue === lastValue &&
-        pool.length > 1 &&
+        availablePool.length > 1 &&
         attempts < maxAttempts
       );
 
@@ -85,6 +149,11 @@ export default function RandomizerPage({
     },
     []
   );
+
+  // 同步 rotators 到 ref
+  useEffect(() => {
+    rotatorsRef.current = rotators;
+  }, [rotators]);
 
   // 加载项目数据
   useEffect(() => {
@@ -100,6 +169,10 @@ export default function RandomizerPage({
         // 抽奖模式
         setMode("lottery");
         const lotteryConfig = project.config as LotteryConfig;
+
+        setPoolType(lotteryConfig.poolType);
+        setDrawMode(lotteryConfig.drawMode);
+        setAllowDuplicates(lotteryConfig.allowDuplicates ?? true);
 
         if (lotteryConfig.poolType === "shared" && lotteryConfig.sharedPool) {
           setSharedPool(lotteryConfig.sharedPool);
@@ -151,12 +224,31 @@ export default function RandomizerPage({
 
   const startSpinning = (rotatorId: string) => {
     const interval = setInterval(() => {
+      // 使用 ref 获取最新的 rotators，避免闭包陷阱
+      const rotator = rotatorsRef.current.find((r) => r.id === rotatorId);
+      if (!rotator) return;
+
+      const pool = rotator.pool || sharedPoolRef.current;
+      const newValue = getRandomValue(rotatorId, pool, {
+        drawMode,
+        allowDuplicates,
+      });
+
+      // 不放回模式：记录已使用的值
+      if (drawMode === "limited" && newValue !== "?") {
+        usedValuesRef.current.add(newValue);
+      }
+
+      // 不允许重复：记录当前轮的值
+      if (!allowDuplicates && drawMode === "unlimited" && newValue !== "?") {
+        currentRoundValues.current.add(newValue);
+      }
+
+      // 更新状态
       setRotators((prev) =>
         prev.map((r) => {
           if (r.id === rotatorId) {
-            // Use individual pool if available, otherwise shared pool
-            const pool = r.pool || sharedPoolRef.current;
-            return { ...r, currentValue: getRandomValue(rotatorId, pool) };
+            return { ...r, currentValue: newValue };
           }
           return r;
         })
@@ -177,11 +269,64 @@ export default function RandomizerPage({
     setIsRunning(true);
     setIsPaused(false);
 
-    // Mark all as spinning
-    setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: true })));
+    // 清空当前轮的重复追踪
+    currentRoundValues.current.clear();
 
-    // Start spinning all rotators
-    rotators.forEach((r) => startSpinning(r.id));
+    if (drawMode === "limited") {
+      // 不放回模式：直接抽取一次
+      const remainingSize = getRemainingPoolSize();
+
+      console.log(
+        "[不放回] 抽取前 - 已使用:",
+        Array.from(usedValuesRef.current)
+      );
+      console.log("[不放回] 抽取前 - 剩余数量:", remainingSize);
+
+      // 先抽取所有值并收集
+      const results = rotators.map((r, index) => {
+        if (index >= remainingSize) {
+          return { id: r.id, value: "--" };
+        }
+
+        const pool = r.pool || sharedPoolRef.current;
+        const newValue = getRandomValue(r.id, pool, {
+          drawMode,
+          allowDuplicates,
+        });
+
+        console.log(`[不放回] 轮换位${index} 抽到:`, newValue);
+        return { id: r.id, value: newValue };
+      });
+
+      // 将有效值添加到已使用集合
+      results.forEach(({ value }) => {
+        if (value !== "?" && value !== "--") {
+          usedValuesRef.current.add(value);
+        }
+      });
+
+      console.log(
+        "[不放回] 抽取后 - 新增:",
+        results.map((r) => r.value).filter((v) => v !== "?" && v !== "--")
+      );
+      console.log("[不放回] 抽取后 - 已使用总数:", usedValuesRef.current.size);
+
+      // 更新状态
+      setRotators((prev) =>
+        prev.map((r) => {
+          const result = results.find((res) => res.id === r.id);
+          return {
+            ...r,
+            currentValue: result?.value || "?",
+            isSpinning: false,
+          };
+        })
+      );
+    } else {
+      // 放回模式：开始轮转动画
+      setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: true })));
+      rotators.forEach((r) => startSpinning(r.id));
+    }
   };
 
   const handlePause = () => {
@@ -206,12 +351,75 @@ export default function RandomizerPage({
       prev.map((r) => ({ ...r, currentValue: "?", isSpinning: false }))
     );
     previousValues.current = {};
+
+    // 重置抽奖追踪状态
+    usedValuesRef.current.clear();
+    currentRoundValues.current.clear();
   };
 
   const handleContinue = () => {
     setIsPaused(false);
-    setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: true })));
-    rotators.forEach((r) => startSpinning(r.id));
+
+    if (drawMode === "limited") {
+      // 不放回模式："继续"按钮变成"下一抽"
+      currentRoundValues.current.clear();
+      const remainingSize = getRemainingPoolSize();
+
+      console.log(
+        "[不放回-继续] 抽取前 - 已使用:",
+        Array.from(usedValuesRef.current)
+      );
+      console.log("[不放回-继续] 抽取前 - 剩余数量:", remainingSize);
+
+      // 先抽取所有值并收集
+      const results = rotators.map((r, index) => {
+        if (index >= remainingSize) {
+          return { id: r.id, value: "--" };
+        }
+
+        const pool = r.pool || sharedPoolRef.current;
+        const newValue = getRandomValue(r.id, pool, {
+          drawMode,
+          allowDuplicates,
+        });
+
+        console.log(`[不放回-继续] 轮换位${index} 抽到:`, newValue);
+        return { id: r.id, value: newValue };
+      });
+
+      // 将有效值添加到已使用集合
+      results.forEach(({ value }) => {
+        if (value !== "?" && value !== "--") {
+          usedValuesRef.current.add(value);
+        }
+      });
+
+      console.log(
+        "[不放回-继续] 抽取后 - 新增:",
+        results.map((r) => r.value).filter((v) => v !== "?" && v !== "--")
+      );
+      console.log(
+        "[不放回-继续] 抽取后 - 已使用总数:",
+        usedValuesRef.current.size
+      );
+
+      // 更新状态
+      setRotators((prev) =>
+        prev.map((r) => {
+          const result = results.find((res) => res.id === r.id);
+          return {
+            ...r,
+            currentValue: result?.value || "?",
+            isSpinning: false,
+          };
+        })
+      );
+    } else {
+      // 放回模式：继续轮转
+      currentRoundValues.current.clear();
+      setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: true })));
+      rotators.forEach((r) => startSpinning(r.id));
+    }
   };
 
   // ============ 分组模式函数 ============
@@ -228,9 +436,11 @@ export default function RandomizerPage({
     const project = getProject(id);
     if (project && project.config.mode === "grouping") {
       const groupingConfig = project.config as GroupingConfig;
+      // 传入现有groups以保留自定义组名
       const newGroups = distributeMembers(
         groupingConfig.members,
-        groupingConfig.groupCount
+        groupingConfig.groupCount,
+        groupingConfig.groups
       );
 
       setGroups(newGroups.map((g) => ({ ...g, isAnimating: false })));
@@ -322,9 +532,9 @@ export default function RandomizerPage({
           </div>
         )}
 
-        {/* 分组模式 - Groups List */}
+        {/* 分组模式 - Groups Grid */}
         {mode === "grouping" && (
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {groups.map((group) => (
               <Card
                 key={group.id}
@@ -332,29 +542,19 @@ export default function RandomizerPage({
                   group.isAnimating ? "opacity-50 scale-95" : "opacity-100"
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-lg font-bold text-primary">
-                        {group.id}
-                      </span>
-                    </div>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">{group.name}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {group.members.length} 人
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{group.name}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {group.members.map((member, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 bg-secondary rounded-full text-sm"
-                        >
-                          {member}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 text-sm text-muted-foreground">
-                    {group.members.length} 人
+                  <div className="flex flex-col gap-2">
+                    {group.members.map((member, idx) => (
+                      <div key={idx} className="text-base">
+                        {member}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </Card>
@@ -367,46 +567,97 @@ export default function RandomizerPage({
           <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border rounded-full p-2 shadow-lg flex gap-2">
             {mode === "lottery" && (
               <>
-                {!isRunning ? (
-                  <Button
-                    size="lg"
-                    className="rounded-full h-14 px-8"
-                    onClick={handleStart}
-                  >
-                    <Play className="h-5 w-5 mr-2" />
-                    开始
-                  </Button>
-                ) : (
+                {drawMode === "limited" ? (
+                  // 不放回模式的按钮逻辑
                   <>
-                    {!isPaused ? (
-                      <Button
-                        size="lg"
-                        variant="secondary"
-                        className="rounded-full h-14 px-8"
-                        onClick={handlePause}
-                      >
-                        <Pause className="h-5 w-5 mr-2" />
-                        暂停
-                      </Button>
-                    ) : (
+                    {!isRunning ? (
+                      // 初始状态：只显示"开始"
                       <Button
                         size="lg"
                         className="rounded-full h-14 px-8"
-                        onClick={handleContinue}
+                        onClick={handleStart}
                       >
                         <Play className="h-5 w-5 mr-2" />
-                        继续
+                        开始
                       </Button>
+                    ) : getRemainingPoolSize() <= 0 ? (
+                      // 池子已空：只显示"重置"（重点色）
+                      <Button
+                        size="lg"
+                        className="rounded-full h-14 px-8"
+                        onClick={handleReset}
+                      >
+                        <RotateCcw className="h-5 w-5 mr-2" />
+                        重置
+                      </Button>
+                    ) : (
+                      // 池子未空：显示"继续"（重点色）和"重置"
+                      <>
+                        <Button
+                          size="lg"
+                          className="rounded-full h-14 px-8"
+                          onClick={handleContinue}
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          继续
+                        </Button>
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="rounded-full h-14 px-8"
+                          onClick={handleReset}
+                        >
+                          <RotateCcw className="h-5 w-5 mr-2" />
+                          重置
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="rounded-full h-14 px-8"
-                      onClick={handleReset}
-                    >
-                      <RotateCcw className="h-5 w-5 mr-2" />
-                      重置
-                    </Button>
+                  </>
+                ) : (
+                  // 放回模式的按钮逻辑（原逻辑）
+                  <>
+                    {!isRunning ? (
+                      <Button
+                        size="lg"
+                        className="rounded-full h-14 px-8"
+                        onClick={handleStart}
+                      >
+                        <Play className="h-5 w-5 mr-2" />
+                        开始
+                      </Button>
+                    ) : (
+                      <>
+                        {!isPaused ? (
+                          <Button
+                            size="lg"
+                            variant="secondary"
+                            className="rounded-full h-14 px-8"
+                            onClick={handlePause}
+                          >
+                            <Pause className="h-5 w-5 mr-2" />
+                            暂停
+                          </Button>
+                        ) : (
+                          <Button
+                            size="lg"
+                            className="rounded-full h-14 px-8"
+                            onClick={handleContinue}
+                          >
+                            <Play className="h-5 w-5 mr-2" />
+                            继续
+                          </Button>
+                        )}
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="rounded-full h-14 px-8"
+                          onClick={handleReset}
+                        >
+                          <RotateCcw className="h-5 w-5 mr-2" />
+                          重置
+                        </Button>
+                      </>
+                    )}
                   </>
                 )}
               </>

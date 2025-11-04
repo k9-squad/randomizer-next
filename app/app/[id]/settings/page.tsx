@@ -32,7 +32,11 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { saveProject, getProject, deleteProject } from "@/lib/storage";
-import type { ProjectConfig, LotteryConfig, GroupingConfig } from "@/types/project";
+import type {
+  ProjectConfig,
+  LotteryConfig,
+  GroupingConfig,
+} from "@/types/project";
 import { validateGroupingConfig } from "@/lib/grouping";
 
 export default function ProjectSettingsPage({
@@ -57,11 +61,19 @@ export default function ProjectSettingsPage({
   const [rotators, setRotators] = useState([
     { id: "1", label: "轮换位 1", individualPool: "" },
   ]);
-  const [isSharedPool, setIsSharedPool] = useState(true);
+  const [poolType, setPoolType] = useState<"shared" | "individual">("shared");
+  const [drawMode, setDrawMode] = useState<"unlimited" | "limited">(
+    "unlimited"
+  );
+  const [allowDuplicates, setAllowDuplicates] = useState(true);
+
+  // 为了兼容旧代码
+  const isSharedPool = poolType === "shared";
 
   // 分组模式状态
   const [members, setMembers] = useState("");
   const [groupCount, setGroupCount] = useState(3);
+  const [groupNames, setGroupNames] = useState<string[]>([]);
 
   // 速度映射
   const speedMap = {
@@ -164,11 +176,9 @@ export default function ProjectSettingsPage({
       // 根据模式加载配置
       if (existing.config.mode === "lottery") {
         setMode("lottery");
-        const hasSharedPool =
-          existing.config.poolType === "shared" &&
-          !!existing.config.sharedPool &&
-          existing.config.sharedPool.length > 0;
-        setIsSharedPool(hasSharedPool);
+        setPoolType(existing.config.poolType);
+        setDrawMode(existing.config.drawMode);
+        setAllowDuplicates(existing.config.allowDuplicates ?? true);
 
         setSharedPool(existing.config.sharedPool?.join("\n") || "");
         setRotators(
@@ -182,6 +192,13 @@ export default function ProjectSettingsPage({
         setMode("grouping");
         setMembers(existing.config.members.join("\n"));
         setGroupCount(existing.config.groupCount);
+        // 加载自定义组名
+        if (existing.config.groups && existing.config.groups.length > 0) {
+          const customNames = existing.config.groups.map((g) =>
+            g.name !== `第 ${g.id} 组` ? g.name : ""
+          );
+          setGroupNames(customNames);
+        }
       }
       if (existing.category) setCategory(existing.category);
       if (existing.tags) setTags(existing.tags);
@@ -208,8 +225,12 @@ export default function ProjectSettingsPage({
     speedLevel,
     sharedPool,
     rotators,
+    poolType,
+    drawMode,
+    allowDuplicates,
     members,
     groupCount,
+    groupNames,
     category,
     tags,
     themeColor,
@@ -277,30 +298,57 @@ export default function ProjectSettingsPage({
     let config: ProjectConfig;
 
     if (mode === "lottery") {
+      const poolItems =
+        poolType === "shared"
+          ? sharedPool.split("\n").filter((line) => line.trim())
+          : [];
+
+      const rotatorConfigs = rotators.map((r, index) => ({
+        id: index + 1,
+        label: r.label.trim() || `轮换位 ${index + 1}`,
+        individualPool:
+          poolType === "individual"
+            ? r.individualPool.split("\n").filter((line) => line.trim())
+            : undefined,
+      }));
+
+      // 验证：不放回模式下，轮换位数量不能超过池子大小
+      if (drawMode === "limited") {
+        let poolSize = 0;
+        if (poolType === "shared") {
+          poolSize = poolItems.length;
+        } else {
+          // 独立池模式下，取最小池子大小
+          const poolSizes = rotatorConfigs
+            .map((r) => r.individualPool?.length || 0)
+            .filter((size) => size > 0);
+          poolSize = poolSizes.length > 0 ? Math.min(...poolSizes) : 0;
+        }
+
+        if (rotators.length > poolSize) {
+          alert(
+            `不放回模式下，轮换位数量（${rotators.length}）不能超过池子大小（${poolSize}）`
+          );
+          return;
+        }
+      }
+
       config = {
         mode: "lottery",
         locationText: locationText.trim(),
         speed: speedMap[speedLevel],
-        poolType: isSharedPool ? "shared" : "individual",
-        drawMode: "unlimited",
-        allowDuplicates: true,
-        sharedPool: isSharedPool
-          ? sharedPool.split("\n").filter((line) => line.trim())
-          : undefined,
-        rotators: rotators.map((r, index) => ({
-          id: index + 1,
-          label: r.label.trim() || `轮换位 ${index + 1}`,
-          individualPool: !isSharedPool
-            ? r.individualPool.split("\n").filter((line) => line.trim())
-            : undefined,
-        })),
+        poolType: poolType,
+        drawMode: drawMode,
+        allowDuplicates: allowDuplicates,
+        sharedPool: poolType === "shared" ? poolItems : undefined,
+        rotators: rotatorConfigs,
       } as LotteryConfig;
     } else {
       // 分组模式
       const memberList = members
         .split("\n")
-        .map(m => m.trim())
-        .filter(m => m);
+        .map((m) => m.trim())
+        .filter((m) => m);
 
       // 验证配置
       const validation = validateGroupingConfig(memberList, groupCount);
@@ -309,13 +357,20 @@ export default function ProjectSettingsPage({
         return;
       }
 
+      // 构建自定义组名的groups（仅包含组名，成员稍后生成）
+      const customGroups = Array.from({ length: groupCount }, (_, i) => ({
+        id: i + 1,
+        name: groupNames[i]?.trim() || `第 ${i + 1} 组`,
+        members: [], // 运行时填充
+      }));
+
       config = {
         mode: "grouping",
         locationText: locationText.trim(),
         speed: speedMap[speedLevel],
         members: memberList,
         groupCount: groupCount,
-        groups: [], // 清空分组，下次运行时重新生成
+        groups: customGroups, // 保存包含自定义名称的空组
       } as GroupingConfig;
     }
 
@@ -507,6 +562,102 @@ export default function ProjectSettingsPage({
         {/* 抽奖模式配置 */}
         {mode === "lottery" && (
           <>
+            {/* 抽奖模式选项 */}
+            <Card className="p-6 flex flex-col gap-4">
+              <h2 className="text-xl font-semibold">抽奖模式设置</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 共享/独立 */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    池子模式 <span className="text-destructive">*</span>
+                  </label>
+                  <Select
+                    value={poolType}
+                    onValueChange={(value: "shared" | "individual") =>
+                      setPoolType(value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="shared">共享池</SelectItem>
+                      <SelectItem value="individual">独立池</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {poolType === "shared"
+                      ? "所有轮换位从同一个池子中抽取"
+                      : "每个轮换位拥有自己的独立池"}
+                  </p>
+                </div>
+
+                {/* 放回/不放回 */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    抽取模式 <span className="text-destructive">*</span>
+                  </label>
+                  <Select
+                    value={drawMode}
+                    onValueChange={(value: "unlimited" | "limited") =>
+                      setDrawMode(value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unlimited">
+                        放回抽取（无限）
+                      </SelectItem>
+                      <SelectItem value="limited">
+                        不放回抽取（有限）
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {drawMode === "unlimited"
+                      ? "可以无限次抽取，选项可重复出现"
+                      : "每个选项只能抽取一次，抽完即止"}
+                  </p>
+                </div>
+              </div>
+
+              {/* 重复/不重复（仅在共享池、无限抽取且轮换位>1时显示） */}
+              {poolType === "shared" &&
+                drawMode === "unlimited" &&
+                rotators.length > 1 && (
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium block">
+                          允许重复结果
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {allowDuplicates
+                            ? "不同轮换位可以抽到相同的内容"
+                            : "不同轮换位不能抽到相同的内容"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={allowDuplicates}
+                        onCheckedChange={setAllowDuplicates}
+                      />
+                    </div>
+                  </div>
+                )}
+
+              {/* 不放回模式的提示 */}
+              {drawMode === "limited" && (
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    ⚠️ 不放回模式下，轮换位数量不能超过池子中的选项数量
+                  </p>
+                </div>
+              )}
+            </Card>
+
             {isSharedPool ? (
               <Card className="p-6 flex flex-col gap-4">
                 <h2 className="text-xl font-semibold">共享池内容</h2>
@@ -519,6 +670,15 @@ export default function ProjectSettingsPage({
                   value={sharedPool}
                   onChange={(e) => setSharedPool(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  当前选项数：
+                  {sharedPool.split("\n").filter((line) => line.trim()).length}
+                  {drawMode === "limited" && (
+                    <span className="ml-2 text-yellow-700 dark:text-yellow-300">
+                      （轮换位数量：{rotators.length}）
+                    </span>
+                  )}
+                </p>
               </Card>
             ) : null}
 
@@ -563,6 +723,14 @@ export default function ProjectSettingsPage({
                                 )
                               }
                             />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              当前选项数：
+                              {
+                                rotator.individualPool
+                                  .split("\n")
+                                  .filter((line) => line.trim()).length
+                              }
+                            </p>
                           </div>
                         )}
                       </div>
@@ -598,7 +766,7 @@ export default function ProjectSettingsPage({
                 onChange={(e) => setMembers(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                当前成员数：{members.split("\n").filter(m => m.trim()).length}
+                当前成员数：{members.split("\n").filter((m) => m.trim()).length}
               </p>
             </Card>
 
@@ -613,7 +781,9 @@ export default function ProjectSettingsPage({
                   min="1"
                   max="100"
                   value={groupCount}
-                  onChange={(e) => setGroupCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setGroupCount(Math.max(1, parseInt(e.target.value) || 1))
+                  }
                   placeholder="请输入分组数量"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
@@ -626,11 +796,14 @@ export default function ProjectSettingsPage({
                 <div className="mt-2 p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-2">预计分组情况：</p>
                   {(() => {
-                    const memberCount = members.split("\n").filter(m => m.trim()).length;
+                    const memberCount = members
+                      .split("\n")
+                      .filter((m) => m.trim()).length;
                     if (memberCount < groupCount) {
                       return (
                         <p className="text-sm text-destructive">
-                          ⚠️ 成员数量（{memberCount}）少于分组数量（{groupCount}），请增加成员或减少分组数
+                          ⚠️ 成员数量（{memberCount}）少于分组数量（{groupCount}
+                          ），请增加成员或减少分组数
                         </p>
                       );
                     }
@@ -638,26 +811,51 @@ export default function ProjectSettingsPage({
                     const remainder = memberCount % groupCount;
                     const groupsWithExtra = remainder;
                     const groupsWithBase = groupCount - remainder;
-                    
+
                     return (
                       <div className="text-sm text-muted-foreground space-y-1">
                         {groupsWithBase > 0 && (
-                          <p>• {groupsWithBase} 个组，每组 {baseSize} 人</p>
+                          <p>
+                            • {groupsWithBase} 个组，每组 {baseSize} 人
+                          </p>
                         )}
                         {groupsWithExtra > 0 && (
-                          <p>• {groupsWithExtra} 个组，每组 {baseSize + 1} 人</p>
+                          <p>
+                            • {groupsWithExtra} 个组，每组 {baseSize + 1} 人
+                          </p>
                         )}
-                        <p className="text-xs mt-2 text-muted-foreground/70">
-                          例如：{memberCount} 人分 {groupCount} 组 → [
-                          {Array.from({length: groupCount}, (_, i) => 
-                            i < remainder ? baseSize + 1 : baseSize
-                          ).join(', ')}]
-                        </p>
                       </div>
                     );
                   })()}
                 </div>
               )}
+            </Card>
+
+            {/* 自定义组名 */}
+            <Card className="p-6 flex flex-col gap-4">
+              <h2 className="text-xl font-semibold">自定义组名（可选）</h2>
+              <p className="text-sm text-muted-foreground">
+                为每个组设置自定义名称。如不设置，将使用默认名称（第 1 组、第 2
+                组...）
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Array.from({ length: groupCount }, (_, i) => (
+                  <div key={i}>
+                    <label className="text-sm font-medium mb-1.5 block">
+                      第 {i + 1} 组
+                    </label>
+                    <Input
+                      placeholder={`第 ${i + 1} 组`}
+                      value={groupNames[i] || ""}
+                      onChange={(e) => {
+                        const newNames = [...groupNames];
+                        newNames[i] = e.target.value;
+                        setGroupNames(newNames);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             </Card>
           </>
         )}
