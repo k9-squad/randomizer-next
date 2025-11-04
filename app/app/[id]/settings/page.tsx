@@ -266,63 +266,67 @@ export default function ProjectSettingsPage({
 
   // Load existing project
   useEffect(() => {
-    const existing = getProject(id);
-    if (existing) {
-      setProjectName(existing.name);
-      setLocationText(existing.config.locationText || "");
-      const loadedSpeed = existing.config.speed;
-      if (loadedSpeed <= 15) setSpeedLevel("slow");
-      else if (loadedSpeed <= 30) setSpeedLevel("medium");
-      else setSpeedLevel("fast");
+    const loadProject = async () => {
+      const existing = await getProject(id);
+      if (existing) {
+        setProjectName(existing.name);
+        setLocationText(existing.config.locationText || "");
+        const loadedSpeed = existing.config.speed;
+        if (loadedSpeed <= 15) setSpeedLevel("slow");
+        else if (loadedSpeed <= 30) setSpeedLevel("medium");
+        else setSpeedLevel("fast");
 
-      // 根据模式加载配置
-      if (existing.config.mode === "lottery") {
-        setMode("lottery");
-        setPoolType(existing.config.poolType);
-        setDrawMode(existing.config.drawMode);
-        setAllowDuplicates(existing.config.allowDuplicates ?? true);
+        // 根据模式加载配置
+        if (existing.config.mode === "lottery") {
+          setMode("lottery");
+          setPoolType(existing.config.poolType);
+          setDrawMode(existing.config.drawMode);
+          setAllowDuplicates(existing.config.allowDuplicates ?? true);
 
-        setSharedPool(existing.config.sharedPool?.join("\n") || "");
-        setRotators(
-          existing.config.rotators.map((r) => ({
-            id: r.id.toString(),
-            label: r.label,
-            individualPool: r.individualPool?.join("\n") || "",
-          }))
-        );
-      } else if (existing.config.mode === "grouping") {
-        setMode("grouping");
-        setMembers(existing.config.members.join("\n"));
-        // 加载组列表
-        if (existing.config.groups && existing.config.groups.length > 0) {
-          setGroups(
-            existing.config.groups.map((g) => ({
-              id: g.id.toString(),
-              name: g.name,
+          setSharedPool(existing.config.sharedPool?.join("\n") || "");
+          setRotators(
+            existing.config.rotators.map((r) => ({
+              id: r.id.toString(),
+              label: r.label,
+              individualPool: r.individualPool?.join("\n") || "",
             }))
           );
-        } else {
-          // 如果没有组信息，根据 groupCount 创建默认组
-          setGroups(
-            Array.from({ length: existing.config.groupCount }, (_, i) => ({
-              id: (i + 1).toString(),
-              name: `第 ${i + 1} 组`,
-            }))
-          );
+        } else if (existing.config.mode === "grouping") {
+          setMode("grouping");
+          setMembers(existing.config.members.join("\n"));
+          // 加载组列表
+          if (existing.config.groups && existing.config.groups.length > 0) {
+            setGroups(
+              existing.config.groups.map((g) => ({
+                id: g.id.toString(),
+                name: g.name,
+              }))
+            );
+          } else {
+            // 如果没有组信息，根据 groupCount 创建默认组
+            setGroups(
+              Array.from({ length: existing.config.groupCount }, (_, i) => ({
+                id: (i + 1).toString(),
+                name: `第 ${i + 1} 组`,
+              }))
+            );
+          }
         }
-      }
-      if (existing.category) setCategory(existing.category);
-      if (existing.tags) setTags(existing.tags);
-      if (existing.themeColor) setThemeColor(existing.themeColor);
-      if (existing.iconType) setIconType(existing.iconType);
-      if (existing.iconName) setSelectedIcon(existing.iconName);
-      if (existing.iconUrl) setImageUrl(existing.iconUrl);
-      if (existing.isPublished) setIsPublished(existing.isPublished);
+        if (existing.category) setCategory(existing.category);
+        if (existing.tags) setTags(existing.tags);
+        if (existing.themeColor) setThemeColor(existing.themeColor);
+        if (existing.iconType) setIconType(existing.iconType);
+        if (existing.iconName) setSelectedIcon(existing.iconName);
+        if (existing.iconUrl) setImageUrl(existing.iconUrl);
+        if (existing.isPublished) setIsPublished(existing.isPublished);
 
-      setTimeout(() => {
-        isInitialLoadRef.current = false;
-      }, 100);
-    }
+        setTimeout(() => {
+          isInitialLoadRef.current = false;
+        }, 100);
+      }
+    };
+
+    loadProject();
   }, [id]);
 
   // 监听字段变化
@@ -418,7 +422,7 @@ export default function ProjectSettingsPage({
     setHasUnsavedChanges(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!projectName.trim()) {
       alert("请输入项目名称");
       return;
@@ -503,7 +507,7 @@ export default function ProjectSettingsPage({
       } as GroupingConfig;
     }
 
-    saveProject({
+    await saveProject({
       id: id,
       name: projectName.trim(),
       config,
@@ -521,8 +525,8 @@ export default function ProjectSettingsPage({
     router.back();
   };
 
-  const handleSaveAndGoBack = () => {
-    handleSave();
+  const handleSaveAndGoBack = async () => {
+    await handleSave();
     setShowUnsavedDialog(false);
   };
 
@@ -539,8 +543,9 @@ export default function ProjectSettingsPage({
     }
   };
 
-  const handleDelete = () => {
-    if (deleteProject(id)) {
+  const handleDelete = async () => {
+    const success = await deleteProject(id);
+    if (success) {
       setHasUnsavedChanges(false);
       router.push("/dashboard/my-projects");
     }

@@ -46,7 +46,7 @@ export default function NewProjectPage() {
     return arr[Math.floor(Math.random() * arr.length)];
   };
 
-  const handleCreateLottery = () => {
+  const handleCreateLottery = async () => {
     const newId = `lottery-${Date.now()}`;
 
     const lotteryConfig: LotteryConfig = {
@@ -64,7 +64,7 @@ export default function NewProjectPage() {
       ],
     };
 
-    saveProject({
+    await saveProject({
       id: newId,
       name: "新建抽奖项目",
       config: lotteryConfig,
@@ -79,7 +79,7 @@ export default function NewProjectPage() {
     router.push(`/app/${newId}`);
   };
 
-  const handleCreateGrouping = () => {
+  const handleCreateGrouping = async () => {
     const newId = `grouping-${Date.now()}`;
 
     const groupingConfig: GroupingConfig = {
@@ -95,7 +95,7 @@ export default function NewProjectPage() {
       ], // 初始包含默认组名，成员运行时生成
     };
 
-    saveProject({
+    await saveProject({
       id: newId,
       name: "新建分组项目",
       config: groupingConfig,

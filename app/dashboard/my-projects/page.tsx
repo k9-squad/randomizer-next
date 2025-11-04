@@ -22,13 +22,17 @@ export default function MyProjectsPage() {
 
   useEffect(() => {
     // 获取所有项目并按修改时间排序（最新的在前）
-    const allProjects = getAllProjects();
-    allProjects.sort((a, b) => {
-      const timeA = new Date(a.updatedAt).getTime();
-      const timeB = new Date(b.updatedAt).getTime();
-      return timeB - timeA; // 降序：最新的在前
-    });
-    setProjects(allProjects);
+    const loadProjects = async () => {
+      const allProjects = await getAllProjects();
+      allProjects.sort((a, b) => {
+        const timeA = new Date(a.updatedAt).getTime();
+        const timeB = new Date(b.updatedAt).getTime();
+        return timeB - timeA; // 降序：最新的在前
+      });
+      setProjects(allProjects);
+    };
+
+    loadProjects();
   }, []);
 
   return (
