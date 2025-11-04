@@ -78,6 +78,9 @@ export default function ProjectSettingsPage({
     { id: "3", name: "第 3 组" },
   ]);
 
+  // 图标分类筛选状态
+  const [iconCategory, setIconCategory] = useState<string>("all");
+
   // 速度映射
   const speedMap = {
     slow: 15,
@@ -131,39 +134,135 @@ export default function ProjectSettingsPage({
     { name: "粉色", value: "#ec4899" },
   ];
 
-  // 常用图标
-  const commonIcons = [
-    "Sparkles",
-    "Dices",
-    "Shuffle",
-    "TrendingUp",
-    "Zap",
-    "Heart",
-    "Star",
-    "Gift",
-    "Trophy",
-    "Crown",
-    "Flame",
-    "Music",
-    "Gamepad2",
-    "Coffee",
-    "Pizza",
-    "Users",
-    "Target",
-    "Rocket",
-    "Lightbulb",
-    "Megaphone",
-    "Calendar",
-    "Clock",
-    "MapPin",
-    "Book",
-    "Briefcase",
-    "ShoppingCart",
-    "Smile",
-    "ThumbsUp",
-    "Bookmark",
-    "Bell",
+  // 图标分类定义
+  const iconCategories = [
+    { id: "all", name: "全部", icon: "Grid3x3" },
+    { id: "random", name: "随机抽奖", icon: "Dices" },
+    { id: "food", name: "餐饮美食", icon: "UtensilsCrossed" },
+    { id: "team", name: "团队协作", icon: "Users" },
+    { id: "game", name: "娱乐游戏", icon: "Gamepad2" },
+    { id: "emotion", name: "情感表达", icon: "Smile" },
   ];
+
+  // 常用图标 - 按使用场景分类
+  const iconsByCategory: Record<string, string[]> = {
+    random: [
+      "Dices",
+      "Shuffle",
+      "Sparkles",
+      "Wand2",
+      "Clover",
+      "Trophy",
+      "Gift",
+      "Crown",
+      "Medal",
+      "Award",
+      "Target",
+      "Zap",
+      "Rocket",
+      "CircleDot",
+      "CheckCircle",
+      "Star",
+      "TrendingUp",
+      "Lightbulb",
+      "Gem",
+      "Diamond",
+    ],
+    food: [
+      "UtensilsCrossed",
+      "Coffee",
+      "Pizza",
+      "Soup",
+      "Wine",
+      "Beer",
+      "IceCream",
+      "Cake",
+      "Apple",
+      "Salad",
+      "Sandwich",
+      "CupSoda",
+      "Cookie",
+      "Candy",
+      "Croissant",
+      "Popcorn",
+      "Beef",
+      "Fish",
+      "Egg",
+      "Milk",
+    ],
+    team: [
+      "Users",
+      "UsersRound",
+      "UserPlus",
+      "UserCheck",
+      "Handshake",
+      "Users2",
+      "Group",
+      "Network",
+      "Share2",
+      "MessageCircle",
+      "UserCog",
+      "UserCircle",
+      "UserSquare",
+      "Shield",
+      "BadgeCheck",
+      "CircleUserRound",
+      "Contact",
+      "HeartHandshake",
+      "Megaphone",
+      "Presentation",
+    ],
+    game: [
+      "Gamepad2",
+      "Joystick",
+      "Puzzle",
+      "Dice1",
+      "Dice2",
+      "Dice3",
+      "Dice4",
+      "Dice5",
+      "Dice6",
+      "Swords",
+      "Drama",
+      "Music",
+      "Mic",
+      "Headphones",
+      "Film",
+      "Tv",
+      "Radio",
+      "Camera",
+      "Video",
+      "PartyPopper",
+    ],
+    emotion: [
+      "Smile",
+      "Laugh",
+      "Heart",
+      "HeartHandshake",
+      "ThumbsUp",
+      "ThumbsDown",
+      "PartyPopper",
+      "Flame",
+      "Star",
+      "Bookmark",
+      "Sun",
+      "Moon",
+      "Cloud",
+      "CloudRain",
+      "Snowflake",
+      "Flower",
+      "Trees",
+      "Leaf",
+      "Sunset",
+      "Rainbow",
+    ],
+  };
+
+  // 获取筛选后的图标
+  const filteredIcons =
+    iconCategory === "all"
+      ? Object.values(iconsByCategory).flat()
+      : iconsByCategory[iconCategory] || [];
 
   // Load existing project
   useEffect(() => {
@@ -776,7 +875,7 @@ export default function ProjectSettingsPage({
                     </div>
                   </Card>
                 ))}
-                
+
                 {/* 添加轮换位按钮 */}
                 <button
                   onClick={addRotator}
@@ -840,7 +939,7 @@ export default function ProjectSettingsPage({
                     </div>
                   </Card>
                 ))}
-                
+
                 {/* 添加分组按钮 */}
                 <button
                   onClick={addGroup}
@@ -1028,27 +1127,64 @@ export default function ProjectSettingsPage({
                             })()}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="grid grid-cols-5 gap-2">
-                            {commonIcons.map((iconName) => {
-                              const IconComponent = (Icons as any)[
-                                iconName
-                              ] as LucideIcon;
-                              return (
-                                <button
-                                  key={iconName}
-                                  onClick={() => setSelectedIcon(iconName)}
-                                  className={`p-3 rounded-lg hover:bg-accent transition-colors ${
-                                    selectedIcon === iconName ? "bg-accent" : ""
-                                  }`}
-                                  title={iconName}
-                                >
-                                  {IconComponent && (
-                                    <IconComponent className="h-5 w-5" />
-                                  )}
-                                </button>
-                              );
-                            })}
+                        <PopoverContent className="w-[90vw] max-w-md p-0">
+                          <div className="flex h-[50vh] max-h-[400px]">
+                            {/* 左侧分类列表 */}
+                            <div className="w-20 border-r bg-muted/30 flex-shrink-0">
+                              <div className="overflow-y-auto h-full">
+                                {iconCategories.map((cat) => (
+                                  <button
+                                    key={cat.id}
+                                    onClick={() => setIconCategory(cat.id)}
+                                    className={`w-full px-2 py-2.5 text-left text-sm transition-colors border-l-2 ${
+                                      iconCategory === cat.id
+                                        ? "border-l-primary bg-background text-foreground font-medium"
+                                        : "border-l-transparent hover:bg-muted/50 text-muted-foreground"
+                                    }`}
+                                  >
+                                    {cat.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* 右侧图标网格 */}
+                            <div className="flex-1 overflow-y-auto">
+                              <div className="p-2.5">
+                                {filteredIcons.length > 0 ? (
+                                  <div className="grid grid-cols-5 gap-2.5">
+                                    {filteredIcons.map((iconName) => {
+                                      const IconComponent = (Icons as any)[
+                                        iconName
+                                      ] as LucideIcon;
+                                      return (
+                                        <button
+                                          key={iconName}
+                                          onClick={() => {
+                                            setSelectedIcon(iconName);
+                                            setHasUnsavedChanges(true);
+                                          }}
+                                          className={`aspect-square p-2 rounded-md border-2 transition-colors ${
+                                            selectedIcon === iconName
+                                              ? "border-primary bg-accent"
+                                              : "border-transparent hover:border-primary/50 hover:bg-accent"
+                                          }`}
+                                          title={iconName}
+                                        >
+                                          {IconComponent && (
+                                            <IconComponent className="w-full h-full" />
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-8 text-muted-foreground text-sm">
+                                    该分类暂无图标
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -1121,11 +1257,7 @@ export default function ProjectSettingsPage({
             >
               放弃更改
             </Button>
-            <Button
-              onClick={handleSave}
-              size="lg"
-              className="flex-1"
-            >
+            <Button onClick={handleSave} size="lg" className="flex-1">
               保存并返回
             </Button>
           </div>
