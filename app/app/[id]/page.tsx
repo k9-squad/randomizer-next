@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -42,6 +42,31 @@ export default function RandomizerPage({
   const previousValues = useRef<{ [key: string]: string }>({});
   const sharedPoolRef = useRef<string[]>([]); // 使用 ref 避免闭包陷阱
 
+  const getRandomValue = useCallback(
+    (rotatorId: string, pool: string[]): string => {
+      if (pool.length === 0) return "?";
+      if (pool.length === 1) return pool[0];
+
+      const lastValue = previousValues.current[rotatorId];
+      let newValue = "";
+      let attempts = 0;
+      const maxAttempts = pool.length * 2; // 防止无限循环
+
+      do {
+        newValue = pool[Math.floor(Math.random() * pool.length)];
+        attempts++;
+      } while (
+        newValue === lastValue &&
+        pool.length > 1 &&
+        attempts < maxAttempts
+      );
+
+      previousValues.current[rotatorId] = newValue;
+      return newValue;
+    },
+    []
+  );
+
   // Load project data from localStorage
   useEffect(() => {
     const project = getProject(id);
@@ -78,22 +103,6 @@ export default function RandomizerPage({
       router.push("/dashboard/my-projects");
     }
   }, [id, router]);
-
-  const getRandomValue = (rotatorId: string, pool: string[]): string => {
-    if (pool.length === 0) return "?";
-    if (pool.length === 1) return pool[0];
-
-    // 使用 do-while 循环确保在池子大小 > 1 时，新值与上一个值不同
-    const lastValue = previousValues.current[rotatorId];
-    let newValue = "";
-
-    do {
-      newValue = pool[Math.floor(Math.random() * pool.length)];
-    } while (newValue === lastValue && pool.length > 1);
-
-    previousValues.current[rotatorId] = newValue;
-    return newValue;
-  };
 
   const startSpinning = (rotatorId: string) => {
     const interval = setInterval(() => {
