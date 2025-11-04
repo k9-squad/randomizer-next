@@ -1,19 +1,47 @@
 import { LucideIcon } from "lucide-react";
 
-// 轮换位定义
+// ============ 抽奖模式相关 ============
+
+// 轮换位定义（抽奖模式）
 export interface Rotator {
   id: number;
   label: string; // 轮换位名称（如"第一道菜"、"故乡是"）
-  individualPool?: string[]; // 独立池数据（仅当isSharedPool=false时使用）
+  individualPool?: string[]; // 独立池数据（仅当poolType='individual'时使用）
 }
 
-// 项目配置
-export interface ProjectConfig {
+// 抽奖模式配置
+export interface LotteryConfig {
+  mode: "lottery";
   locationText?: string; // 情景文字
   speed: number; // 轮换速度(次/秒)，默认30
-  sharedPool?: string[]; // 共享池数据（仅当isSharedPool=true时使用）
+  poolType: "shared" | "individual"; // 共享池 or 独立池
+  drawMode: "unlimited" | "limited"; // 无限抽取 or 有限抽取（不放回）
+  allowDuplicates?: boolean; // 是否允许重复（仅unlimited模式有效）
+  sharedPool?: string[]; // 共享池数据（仅当poolType='shared'时使用）
   rotators: Rotator[]; // 轮换位列表
 }
+
+// ============ 分组模式相关 ============
+
+// 分组定义
+export interface Group {
+  id: number;
+  name: string; // 组名
+  members: string[]; // 本组成员
+}
+
+// 分组模式配置
+export interface GroupingConfig {
+  mode: "grouping";
+  locationText?: string; // 情景文字
+  speed: number; // 轮换速度(次/秒)，默认30
+  members: string[]; // 所有成员列表
+  groupCount: number; // 分组数量
+  groups: Group[]; // 当前分组结果（运行时生成）
+}
+
+// 项目配置（联合类型）
+export type ProjectConfig = LotteryConfig | GroupingConfig;
 
 // 项目统计数据（仅分享后有）
 export interface ProjectStats {
@@ -28,7 +56,6 @@ export interface Project {
   // 基础数据
   id: string;
   name: string;
-  isSharedPool: boolean; // true=共享池, false=独立池
   isDefault?: boolean; // 是否为官方模板
   
   // 视觉数据

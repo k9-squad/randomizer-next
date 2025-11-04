@@ -63,8 +63,8 @@ export default function MyProjectsPage() {
             } else if (project.iconName) {
               icon = (Icons as any)[project.iconName] as LucideIcon;
             } else {
-              // 默认图标
-              icon = project.config.sharedPool ? Shuffle : Dices;
+              // 默认图标：根据模式选择
+              icon = project.config.mode === "grouping" ? Shuffle : Dices;
             }
 
             // 获取主题色

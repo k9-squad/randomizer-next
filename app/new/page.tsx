@@ -2,79 +2,71 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, List, ArrowRight } from "lucide-react";
+import { Dices, Users, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { saveProject } from "@/lib/storage";
+import { LotteryConfig, GroupingConfig } from "@/types/project";
 
 export default function NewProjectPage() {
   const router = useRouter();
 
-  const handleCreateShared = () => {
-    const newId = `shared-${Date.now()}`;
+  const handleCreateLottery = () => {
+    const newId = `lottery-${Date.now()}`;
 
-    // 创建带默认值的共享池项目
+    const lotteryConfig: LotteryConfig = {
+      mode: "lottery",
+      locationText: "",
+      speed: 30,
+      poolType: "shared",
+      drawMode: "unlimited",
+      allowDuplicates: true,
+      sharedPool: ["选项1", "选项2", "选项3"],
+      rotators: [
+        { id: 1, label: "轮换位 1" },
+        { id: 2, label: "轮换位 2" },
+        { id: 3, label: "轮换位 3" },
+      ],
+    };
+
     saveProject({
       id: newId,
-      name: "新建项目",
-      config: {
-        locationText: "",
-        speed: 30,
-        sharedPool: ["选项1", "选项2", "选项3"],
-        rotators: [
-          { id: 1, label: "轮换位 1" },
-          { id: 2, label: "轮换位 2" },
-          { id: 3, label: "轮换位 3" },
-        ],
-      },
+      name: "新建抽奖项目",
+      config: lotteryConfig,
       isOwner: true,
-      category: "随机选择",
+      category: "抽奖",
       themeColor: "#a855f7",
       iconType: "lucide",
       iconName: "Sparkles",
       isPublished: false,
     });
 
-    // 直接跳转到项目页面
     router.push(`/app/${newId}`);
   };
 
-  const handleCreateIndividual = () => {
-    const newId = `individual-${Date.now()}`;
+  const handleCreateGrouping = () => {
+    const newId = `grouping-${Date.now()}`;
 
-    // 创建带默认值的独立池项目
+    const groupingConfig: GroupingConfig = {
+      mode: "grouping",
+      locationText: "",
+      speed: 30,
+      members: ["成员1", "成员2", "成员3", "成员4", "成员5", "成员6"],
+      groupCount: 3,
+      groups: [], // 初始为空，运行时生成
+    };
+
     saveProject({
       id: newId,
-      name: "新建项目",
-      config: {
-        locationText: "",
-        speed: 30,
-        rotators: [
-          {
-            id: 1,
-            label: "轮换位 1",
-            individualPool: ["选项1", "选项2", "选项3"],
-          },
-          {
-            id: 2,
-            label: "轮换位 2",
-            individualPool: ["选项1", "选项2", "选项3"],
-          },
-          {
-            id: 3,
-            label: "轮换位 3",
-            individualPool: ["选项1", "选项2", "选项3"],
-          },
-        ],
-      },
+      name: "新建分组项目",
+      config: groupingConfig,
       isOwner: true,
-      category: "随机选择",
-      themeColor: "#a855f7",
+      category: "分组",
+      themeColor: "#10b981",
       iconType: "lucide",
-      iconName: "Sparkles",
+      iconName: "Users",
       isPublished: false,
     });
 
-    // 直接跳转到项目页面
     router.push(`/app/${newId}`);
   };
 
@@ -93,7 +85,7 @@ export default function NewProjectPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card
             className="relative overflow-hidden border-2 hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={handleCreateShared}
+            onClick={handleCreateLottery}
           >
             <div
               className="absolute inset-0 opacity-10"
@@ -104,13 +96,13 @@ export default function NewProjectPage() {
             />
             <div className="relative p-8 flex flex-col gap-6">
               <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Database className="h-8 w-8 text-primary" strokeWidth={1.5} />
+                <Dices className="h-8 w-8 text-primary" strokeWidth={1.5} />
               </div>
 
               <div className="flex flex-col gap-3">
-                <h2 className="text-2xl font-bold">共享池</h2>
+                <h2 className="text-2xl font-bold">抽奖模式</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  所有轮换位使用同一个池子。适合"今天吃什么"、"随机抽签"等场景，每个轮换位从相同的选项中抽取不同的结果。
+                  多个轮换位，每个轮换位独立抽取结果。可选择共享池或独立池，支持无限抽取或有限抽取（不放回）。
                 </p>
               </div>
 
@@ -119,14 +111,14 @@ export default function NewProjectPage() {
                   典型案例
                 </p>
                 <div className="flex flex-col gap-1 text-sm">
-                  <p className="text-foreground/80">• 中午吃什么</p>
-                  <p className="text-foreground/80">• 抽奖活动</p>
-                  <p className="text-foreground/80">• 守望先锋穿越</p>
+                  <p className="text-foreground/80">• 今天吃什么</p>
+                  <p className="text-foreground/80">• 随机抽签</p>
+                  <p className="text-foreground/80">• COC人设车卡</p>
                 </div>
               </div>
 
               <Button className="w-full group-hover:bg-primary/90">
-                创建共享池项目
+                创建抽奖项目
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -134,7 +126,7 @@ export default function NewProjectPage() {
 
           <Card
             className="relative overflow-hidden border-2 hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={handleCreateIndividual}
+            onClick={handleCreateGrouping}
           >
             <div
               className="absolute inset-0 opacity-10"
@@ -145,13 +137,13 @@ export default function NewProjectPage() {
             />
             <div className="relative p-8 flex flex-col gap-6">
               <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <List className="h-8 w-8 text-primary" strokeWidth={1.5} />
+                <Users className="h-8 w-8 text-primary" strokeWidth={1.5} />
               </div>
 
               <div className="flex flex-col gap-3">
-                <h2 className="text-2xl font-bold">独立池</h2>
+                <h2 className="text-2xl font-bold">分组模式</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  每个轮换位拥有独立的池子。适合"COC车卡"、"角色生成器"等场景，每个轮换位从不同的选项类别中抽取结果。
+                  将成员随机分配到指定数量的组中。支持均匀分配算法，确保每个组的人数尽可能接近，可无限重新分组。
                 </p>
               </div>
 
@@ -160,14 +152,14 @@ export default function NewProjectPage() {
                   典型案例
                 </p>
                 <div className="flex flex-col gap-1 text-sm">
-                  <p className="text-foreground/80">• COC人设车卡</p>
-                  <p className="text-foreground/80">• 随机超能力</p>
-                  <p className="text-foreground/80">• 角色生成器</p>
+                  <p className="text-foreground/80">• 随机分队</p>
+                  <p className="text-foreground/80">• 小组作业分组</p>
+                  <p className="text-foreground/80">• 活动团队划分</p>
                 </div>
               </div>
 
               <Button className="w-full group-hover:bg-primary/90">
-                创建独立池项目
+                创建分组项目
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -178,8 +170,26 @@ export default function NewProjectPage() {
           <div className="flex-shrink-0 w-1 h-1 rounded-full bg-primary mt-2" />
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">提示：</span>
-            创建后，项目会带有默认的占位内容。点击右上角的设置按钮即可编辑项目内容和配置。
+            创建后，项目会带有默认的占位内容。点击项目页面右上角的设置按钮即可编辑项目内容和配置。
           </p>
+        </div>
+
+        <div className="flex flex-col gap-4 p-5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <h3 className="font-semibold text-foreground">💡 两种模式的区别</h3>
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-medium text-foreground mb-2">抽奖模式</p>
+              <p className="text-muted-foreground leading-relaxed">
+                适合需要多次独立抽取的场景。例如"今天吃什么"项目中，第一道菜、第二道菜、第三道菜分别独立抽取。
+              </p>
+            </div>
+            <div>
+              <p className="font-medium text-foreground mb-2">分组模式</p>
+              <p className="text-muted-foreground leading-relaxed">
+                适合需要将人员分配到不同组的场景。例如将30名学生随机分成10个小组，系统会自动均匀分配人数。
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

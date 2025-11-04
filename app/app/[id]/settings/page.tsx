@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { saveProject, getProject, deleteProject } from "@/lib/storage";
-import type { ProjectConfig } from "@/types/project";
+import type { ProjectConfig, LotteryConfig, GroupingConfig } from "@/types/project";
+import { validateGroupingConfig } from "@/lib/grouping";
 
 export default function ProjectSettingsPage({
   params,
@@ -42,16 +43,25 @@ export default function ProjectSettingsPage({
   const { id } = use(params);
   const router = useRouter();
 
+  // 项目模式
+  const [mode, setMode] = useState<"lottery" | "grouping">("lottery");
+
   const [projectName, setProjectName] = useState("");
   const [locationText, setLocationText] = useState("");
   const [speedLevel, setSpeedLevel] = useState<"slow" | "medium" | "fast">(
     "medium"
   );
+
+  // 抽奖模式状态
   const [sharedPool, setSharedPool] = useState("");
   const [rotators, setRotators] = useState([
     { id: "1", label: "轮换位 1", individualPool: "" },
   ]);
   const [isSharedPool, setIsSharedPool] = useState(true);
+
+  // 分组模式状态
+  const [members, setMembers] = useState("");
+  const [groupCount, setGroupCount] = useState(3);
 
   // 速度映射
   const speedMap = {
@@ -151,18 +161,28 @@ export default function ProjectSettingsPage({
       else if (loadedSpeed <= 30) setSpeedLevel("medium");
       else setSpeedLevel("fast");
 
-      const hasSharedPool =
-        !!existing.config.sharedPool && existing.config.sharedPool.length > 0;
-      setIsSharedPool(hasSharedPool);
+      // 根据模式加载配置
+      if (existing.config.mode === "lottery") {
+        setMode("lottery");
+        const hasSharedPool =
+          existing.config.poolType === "shared" &&
+          !!existing.config.sharedPool &&
+          existing.config.sharedPool.length > 0;
+        setIsSharedPool(hasSharedPool);
 
-      setSharedPool(existing.config.sharedPool?.join("\n") || "");
-      setRotators(
-        existing.config.rotators.map((r) => ({
-          id: r.id.toString(),
-          label: r.label,
-          individualPool: r.individualPool?.join("\n") || "",
-        }))
-      );
+        setSharedPool(existing.config.sharedPool?.join("\n") || "");
+        setRotators(
+          existing.config.rotators.map((r) => ({
+            id: r.id.toString(),
+            label: r.label,
+            individualPool: r.individualPool?.join("\n") || "",
+          }))
+        );
+      } else if (existing.config.mode === "grouping") {
+        setMode("grouping");
+        setMembers(existing.config.members.join("\n"));
+        setGroupCount(existing.config.groupCount);
+      }
       if (existing.category) setCategory(existing.category);
       if (existing.tags) setTags(existing.tags);
       if (existing.themeColor) setThemeColor(existing.themeColor);
@@ -188,6 +208,8 @@ export default function ProjectSettingsPage({
     speedLevel,
     sharedPool,
     rotators,
+    members,
+    groupCount,
     category,
     tags,
     themeColor,
@@ -252,20 +274,50 @@ export default function ProjectSettingsPage({
       return;
     }
 
-    const config: ProjectConfig = {
-      locationText: locationText.trim(),
-      speed: speedMap[speedLevel],
-      sharedPool: isSharedPool
-        ? sharedPool.split("\n").filter((line) => line.trim())
-        : undefined,
-      rotators: rotators.map((r, index) => ({
-        id: index + 1,
-        label: r.label.trim() || `轮换位 ${index + 1}`,
-        individualPool: !isSharedPool
-          ? r.individualPool.split("\n").filter((line) => line.trim())
+    let config: ProjectConfig;
+
+    if (mode === "lottery") {
+      config = {
+        mode: "lottery",
+        locationText: locationText.trim(),
+        speed: speedMap[speedLevel],
+        poolType: isSharedPool ? "shared" : "individual",
+        drawMode: "unlimited",
+        allowDuplicates: true,
+        sharedPool: isSharedPool
+          ? sharedPool.split("\n").filter((line) => line.trim())
           : undefined,
-      })),
-    };
+        rotators: rotators.map((r, index) => ({
+          id: index + 1,
+          label: r.label.trim() || `轮换位 ${index + 1}`,
+          individualPool: !isSharedPool
+            ? r.individualPool.split("\n").filter((line) => line.trim())
+            : undefined,
+        })),
+      } as LotteryConfig;
+    } else {
+      // 分组模式
+      const memberList = members
+        .split("\n")
+        .map(m => m.trim())
+        .filter(m => m);
+
+      // 验证配置
+      const validation = validateGroupingConfig(memberList, groupCount);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+
+      config = {
+        mode: "grouping",
+        locationText: locationText.trim(),
+        speed: speedMap[speedLevel],
+        members: memberList,
+        groupCount: groupCount,
+        groups: [], // 清空分组，下次运行时重新生成
+      } as GroupingConfig;
+    }
 
     saveProject({
       id: id,
@@ -452,79 +504,163 @@ export default function ProjectSettingsPage({
           </div>
         </Card>
 
-        {isSharedPool ? (
-          <Card className="p-6 flex flex-col gap-4">
-            <h2 className="text-xl font-semibold">共享池内容</h2>
-            <p className="text-sm text-muted-foreground">
-              每行一个选项，所有轮换位将从这些选项中随机选择
-            </p>
-            <textarea
-              className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y"
-              placeholder={"黄焖鸡米饭\n沙县小吃\n兰州拉面\n麦当劳\n肯德基"}
-              value={sharedPool}
-              onChange={(e) => setSharedPool(e.target.value)}
-            />
-          </Card>
-        ) : null}
+        {/* 抽奖模式配置 */}
+        {mode === "lottery" && (
+          <>
+            {isSharedPool ? (
+              <Card className="p-6 flex flex-col gap-4">
+                <h2 className="text-xl font-semibold">共享池内容</h2>
+                <p className="text-sm text-muted-foreground">
+                  每行一个选项，所有轮换位将从这些选项中随机选择
+                </p>
+                <textarea
+                  className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y"
+                  placeholder={"黄焖鸡米饭\n沙县小吃\n兰州拉面\n麦当劳\n肯德基"}
+                  value={sharedPool}
+                  onChange={(e) => setSharedPool(e.target.value)}
+                />
+              </Card>
+            ) : null}
 
-        <Card className="p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">轮换位设置</h2>
-            <Button onClick={addRotator} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              添加轮换位
-            </Button>
-          </div>
+            <Card className="p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">轮换位设置</h2>
+                <Button onClick={addRotator} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  添加轮换位
+                </Button>
+              </div>
 
-          <div className="flex flex-col gap-4">
-            {rotators.map((rotator) => (
-              <Card key={rotator.id} className="p-4 bg-secondary/20">
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
-                    <GripVertical className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 flex flex-col gap-3">
-                    <Input
-                      placeholder="轮换位标签"
-                      value={rotator.label}
-                      onChange={(e) =>
-                        updateRotator(rotator.id, "label", e.target.value)
-                      }
-                    />
-                    {!isSharedPool && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          该轮换位的独立池（每行一个选项）
-                        </p>
-                        <textarea
-                          className="w-full min-h-[120px] p-3 rounded-md border border-input bg-background text-sm resize-y"
-                          placeholder="选项1\n选项2\n选项3"
-                          value={rotator.individualPool}
+              <div className="flex flex-col gap-4">
+                {rotators.map((rotator) => (
+                  <Card key={rotator.id} className="p-4 bg-secondary/20">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 flex flex-col gap-3">
+                        <Input
+                          placeholder="轮换位标签"
+                          value={rotator.label}
                           onChange={(e) =>
-                            updateRotator(
-                              rotator.id,
-                              "individualPool",
-                              e.target.value
-                            )
+                            updateRotator(rotator.id, "label", e.target.value)
                           }
                         />
+                        {!isSharedPool && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              该轮换位的独立池（每行一个选项）
+                            </p>
+                            <textarea
+                              className="w-full min-h-[120px] p-3 rounded-md border border-input bg-background text-sm resize-y"
+                              placeholder="选项1\n选项2\n选项3"
+                              value={rotator.individualPool}
+                              onChange={(e) =>
+                                updateRotator(
+                                  rotator.id,
+                                  "individualPool",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  {rotators.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeRotator(rotator.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
+                      {rotators.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeRotator(rotator.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* 分组模式配置 */}
+        {mode === "grouping" && (
+          <>
+            <Card className="p-6 flex flex-col gap-4">
+              <h2 className="text-xl font-semibold">成员列表</h2>
+              <p className="text-sm text-muted-foreground">
+                每行一个成员名称，这些成员将被随机分配到各个组中
+              </p>
+              <textarea
+                className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y font-mono"
+                placeholder={"张三\n李四\n王五\n赵六\n钱七\n孙八"}
+                value={members}
+                onChange={(e) => setMembers(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                当前成员数：{members.split("\n").filter(m => m.trim()).length}
+              </p>
+            </Card>
+
+            <Card className="p-6 flex flex-col gap-4">
+              <h2 className="text-xl font-semibold">分组设置</h2>
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  分组数量 <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={groupCount}
+                  onChange={(e) => setGroupCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  placeholder="请输入分组数量"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 系统会自动均匀分配成员到各组，确保每组人数尽可能接近
+                </p>
+              </div>
+
+              {/* 实时预览分组情况 */}
+              {members.trim() && groupCount > 0 && (
+                <div className="mt-2 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-2">预计分组情况：</p>
+                  {(() => {
+                    const memberCount = members.split("\n").filter(m => m.trim()).length;
+                    if (memberCount < groupCount) {
+                      return (
+                        <p className="text-sm text-destructive">
+                          ⚠️ 成员数量（{memberCount}）少于分组数量（{groupCount}），请增加成员或减少分组数
+                        </p>
+                      );
+                    }
+                    const baseSize = Math.floor(memberCount / groupCount);
+                    const remainder = memberCount % groupCount;
+                    const groupsWithExtra = remainder;
+                    const groupsWithBase = groupCount - remainder;
+                    
+                    return (
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {groupsWithBase > 0 && (
+                          <p>• {groupsWithBase} 个组，每组 {baseSize} 人</p>
+                        )}
+                        {groupsWithExtra > 0 && (
+                          <p>• {groupsWithExtra} 个组，每组 {baseSize + 1} 人</p>
+                        )}
+                        <p className="text-xs mt-2 text-muted-foreground/70">
+                          例如：{memberCount} 人分 {groupCount} 组 → [
+                          {Array.from({length: groupCount}, (_, i) => 
+                            i < remainder ? baseSize + 1 : baseSize
+                          ).join(', ')}]
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
-              </Card>
-            ))}
-          </div>
-        </Card>
+              )}
+            </Card>
+          </>
+        )}
 
         {/* 外观设置 */}
         <Card className="p-6 flex flex-col gap-4">

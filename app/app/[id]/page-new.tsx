@@ -69,7 +69,7 @@ export default function RandomizerPage({
       const lastValue = previousValues.current[rotatorId];
       let newValue = "";
       let attempts = 0;
-      const maxAttempts = pool.length * 2; // 防止无限循环
+      const maxAttempts = pool.length * 2;
 
       do {
         newValue = pool[Math.floor(Math.random() * pool.length)];
@@ -120,7 +120,7 @@ export default function RandomizerPage({
         setMode("grouping");
         const groupingConfig = project.config as GroupingConfig;
 
-        // 如果已有分组结果，加载；否则初次生成
+        // 如果已有分组结果，加载；否则初始生成
         if (groupingConfig.groups && groupingConfig.groups.length > 0) {
           setGroups(
             groupingConfig.groups.map((g) => ({ ...g, isAnimating: false }))
@@ -149,12 +149,13 @@ export default function RandomizerPage({
     }
   }, [id, router]);
 
+  // ============ 抽奖模式函数 ============
+
   const startSpinning = (rotatorId: string) => {
     const interval = setInterval(() => {
       setRotators((prev) =>
         prev.map((r) => {
           if (r.id === rotatorId) {
-            // Use individual pool if available, otherwise shared pool
             const pool = r.pool || sharedPoolRef.current;
             return { ...r, currentValue: getRandomValue(rotatorId, pool) };
           }
@@ -176,32 +177,20 @@ export default function RandomizerPage({
   const handleStart = () => {
     setIsRunning(true);
     setIsPaused(false);
-
-    // Mark all as spinning
     setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: true })));
-
-    // Start spinning all rotators
     rotators.forEach((r) => startSpinning(r.id));
   };
 
   const handlePause = () => {
     setIsPaused(true);
-
-    // Stop all intervals
     Object.keys(intervalRefs.current).forEach(stopSpinning);
-
-    // Mark all as not spinning
     setRotators((prev) => prev.map((r) => ({ ...r, isSpinning: false })));
   };
 
   const handleReset = () => {
     setIsRunning(false);
     setIsPaused(false);
-
-    // Stop all intervals
     Object.keys(intervalRefs.current).forEach(stopSpinning);
-
-    // Reset all values
     setRotators((prev) =>
       prev.map((r) => ({ ...r, currentValue: "?", isSpinning: false }))
     );
@@ -255,6 +244,8 @@ export default function RandomizerPage({
       Object.keys(intervalRefs.current).forEach(stopSpinning);
     };
   }, []);
+
+  // ============ 渲染 ============
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6 pb-32">
