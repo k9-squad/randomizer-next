@@ -149,7 +149,7 @@ export default function RandomizerPage({
         router.push("/dashboard/my-projects");
       }
     };
-    
+
     loadProject();
   }, [id, router]);
 
