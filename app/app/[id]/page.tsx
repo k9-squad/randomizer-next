@@ -24,6 +24,7 @@ interface RotatorState {
   label: string;
   currentValue: string;
   isSpinning: boolean;
+  isAnimating?: boolean; // For draw animation
   pool?: string[]; // For individual pool mode
 }
 
@@ -265,7 +266,7 @@ export default function RandomizerPage({
     }
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setIsRunning(true);
     setIsPaused(false);
 
@@ -273,7 +274,7 @@ export default function RandomizerPage({
     currentRoundValues.current.clear();
 
     if (drawMode === "limited") {
-      // 不放回模式：直接抽取一次
+      // 不放回模式：直接抽取一次，添加动画效果
       const remainingSize = getRemainingPoolSize();
 
       console.log(
@@ -281,6 +282,12 @@ export default function RandomizerPage({
         Array.from(usedValuesRef.current)
       );
       console.log("[不放回] 抽取前 - 剩余数量:", remainingSize);
+
+      // 添加动画效果
+      setRotators((prev) => prev.map((r) => ({ ...r, isAnimating: true })));
+
+      // 延迟后抽取
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 使用临时集合追踪本轮已抽取的值，确保同一轮不重复
       const currentRoundUsed = new Set<string>();
@@ -292,10 +299,11 @@ export default function RandomizerPage({
         }
 
         const pool = r.pool || sharedPoolRef.current;
-        
+
         // 过滤掉已使用的值和本轮已抽取的值
         const availablePool = pool.filter(
-          (item) => !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
+          (item) =>
+            !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
         );
 
         if (availablePool.length === 0) {
@@ -303,8 +311,9 @@ export default function RandomizerPage({
         }
 
         // 随机选择一个值
-        const newValue = availablePool[Math.floor(Math.random() * availablePool.length)];
-        
+        const newValue =
+          availablePool[Math.floor(Math.random() * availablePool.length)];
+
         // 立即添加到本轮已使用集合，防止后续轮换位抽到相同值
         currentRoundUsed.add(newValue);
 
@@ -325,7 +334,7 @@ export default function RandomizerPage({
       );
       console.log("[不放回] 抽取后 - 已使用总数:", usedValuesRef.current.size);
 
-      // 更新状态
+      // 更新状态，移除动画
       setRotators((prev) =>
         prev.map((r) => {
           const result = results.find((res) => res.id === r.id);
@@ -333,6 +342,7 @@ export default function RandomizerPage({
             ...r,
             currentValue: result?.value || "?",
             isSpinning: false,
+            isAnimating: false,
           };
         })
       );
@@ -371,11 +381,11 @@ export default function RandomizerPage({
     currentRoundValues.current.clear();
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setIsPaused(false);
 
     if (drawMode === "limited") {
-      // 不放回模式："继续"按钮变成"下一抽"
+      // 不放回模式："继续"按钮变成"下一抽"，添加动画效果
       currentRoundValues.current.clear();
       const remainingSize = getRemainingPoolSize();
 
@@ -384,6 +394,12 @@ export default function RandomizerPage({
         Array.from(usedValuesRef.current)
       );
       console.log("[不放回-继续] 抽取前 - 剩余数量:", remainingSize);
+
+      // 添加动画效果
+      setRotators((prev) => prev.map((r) => ({ ...r, isAnimating: true })));
+
+      // 延迟后抽取
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 使用临时集合追踪本轮已抽取的值，确保同一轮不重复
       const currentRoundUsed = new Set<string>();
@@ -395,10 +411,11 @@ export default function RandomizerPage({
         }
 
         const pool = r.pool || sharedPoolRef.current;
-        
+
         // 过滤掉已使用的值和本轮已抽取的值
         const availablePool = pool.filter(
-          (item) => !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
+          (item) =>
+            !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
         );
 
         if (availablePool.length === 0) {
@@ -406,8 +423,9 @@ export default function RandomizerPage({
         }
 
         // 随机选择一个值
-        const newValue = availablePool[Math.floor(Math.random() * availablePool.length)];
-        
+        const newValue =
+          availablePool[Math.floor(Math.random() * availablePool.length)];
+
         // 立即添加到本轮已使用集合，防止后续轮换位抽到相同值
         currentRoundUsed.add(newValue);
 
@@ -431,7 +449,7 @@ export default function RandomizerPage({
         usedValuesRef.current.size
       );
 
-      // 更新状态
+      // 更新状态，移除动画
       setRotators((prev) =>
         prev.map((r) => {
           const result = results.find((res) => res.id === r.id);
@@ -439,6 +457,7 @@ export default function RandomizerPage({
             ...r,
             currentValue: result?.value || "?",
             isSpinning: false,
+            isAnimating: false,
           };
         })
       );
@@ -543,7 +562,9 @@ export default function RandomizerPage({
             {rotators.map((rotator) => (
               <Card
                 key={rotator.id}
-                className="p-6 md:p-8 flex flex-col items-center justify-center gap-4 min-h-[160px] md:min-h-[200px]"
+                className={`p-6 md:p-8 flex flex-col items-center justify-center gap-4 min-h-[160px] md:min-h-[200px] transition-all ${
+                  rotator.isAnimating ? "opacity-50 scale-95" : "opacity-100"
+                }`}
               >
                 <div className="text-sm md:text-base font-medium text-muted-foreground">
                   {rotator.label}

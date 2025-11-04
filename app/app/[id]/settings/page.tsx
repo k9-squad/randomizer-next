@@ -556,8 +556,8 @@ export default function ProjectSettingsPage({
               </div>
             )}
 
-            {/* 旋转速度（仅抽奖模式） */}
-            {mode === "lottery" && (
+            {/* 旋转速度（仅抽奖模式+放回+无限次） */}
+            {mode === "lottery" && drawMode === "unlimited" && (
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   旋转速度

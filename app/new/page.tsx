@@ -10,6 +10,42 @@ import { LotteryConfig, GroupingConfig } from "@/types/project";
 export default function NewProjectPage() {
   const router = useRouter();
 
+  // 预设主题色
+  const presetColors = [
+    "#a855f7", // 紫色
+    "#3b82f6", // 蓝色
+    "#06b6d4", // 青色
+    "#10b981", // 绿色
+    "#f59e0b", // 黄色
+    "#f97316", // 橙色
+    "#ef4444", // 红色
+    "#ec4899", // 粉色
+  ];
+
+  // 常用图标
+  const commonIcons = [
+    "Sparkles",
+    "Dices",
+    "Shuffle",
+    "TrendingUp",
+    "Zap",
+    "Heart",
+    "Star",
+    "Gift",
+    "Trophy",
+    "Crown",
+    "Flame",
+    "Music",
+    "Gamepad2",
+    "Coffee",
+    "Pizza",
+  ];
+
+  // 随机选择函数
+  const getRandomItem = <T,>(arr: T[]): T => {
+    return arr[Math.floor(Math.random() * arr.length)];
+  };
+
   const handleCreateLottery = () => {
     const newId = `lottery-${Date.now()}`;
 
@@ -33,10 +69,10 @@ export default function NewProjectPage() {
       name: "新建抽奖项目",
       config: lotteryConfig,
       isOwner: true,
-      category: "抽奖",
-      themeColor: "#a855f7",
+      category: "随机选择",
+      themeColor: getRandomItem(presetColors),
       iconType: "lucide",
-      iconName: "Sparkles",
+      iconName: getRandomItem(commonIcons),
       isPublished: false,
     });
 
@@ -64,10 +100,10 @@ export default function NewProjectPage() {
       name: "新建分组项目",
       config: groupingConfig,
       isOwner: true,
-      category: "分组",
-      themeColor: "#10b981",
+      category: "团队分组",
+      themeColor: getRandomItem(presetColors),
       iconType: "lucide",
-      iconName: "Users",
+      iconName: getRandomItem(commonIcons),
       isPublished: false,
     });
 
