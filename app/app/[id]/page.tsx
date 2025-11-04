@@ -282,6 +282,9 @@ export default function RandomizerPage({
       );
       console.log("[不放回] 抽取前 - 剩余数量:", remainingSize);
 
+      // 使用临时集合追踪本轮已抽取的值，确保同一轮不重复
+      const currentRoundUsed = new Set<string>();
+
       // 先抽取所有值并收集
       const results = rotators.map((r, index) => {
         if (index >= remainingSize) {
@@ -289,10 +292,21 @@ export default function RandomizerPage({
         }
 
         const pool = r.pool || sharedPoolRef.current;
-        const newValue = getRandomValue(r.id, pool, {
-          drawMode,
-          allowDuplicates,
-        });
+        
+        // 过滤掉已使用的值和本轮已抽取的值
+        const availablePool = pool.filter(
+          (item) => !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
+        );
+
+        if (availablePool.length === 0) {
+          return { id: r.id, value: "?" };
+        }
+
+        // 随机选择一个值
+        const newValue = availablePool[Math.floor(Math.random() * availablePool.length)];
+        
+        // 立即添加到本轮已使用集合，防止后续轮换位抽到相同值
+        currentRoundUsed.add(newValue);
 
         console.log(`[不放回] 轮换位${index} 抽到:`, newValue);
         return { id: r.id, value: newValue };
@@ -371,6 +385,9 @@ export default function RandomizerPage({
       );
       console.log("[不放回-继续] 抽取前 - 剩余数量:", remainingSize);
 
+      // 使用临时集合追踪本轮已抽取的值，确保同一轮不重复
+      const currentRoundUsed = new Set<string>();
+
       // 先抽取所有值并收集
       const results = rotators.map((r, index) => {
         if (index >= remainingSize) {
@@ -378,10 +395,21 @@ export default function RandomizerPage({
         }
 
         const pool = r.pool || sharedPoolRef.current;
-        const newValue = getRandomValue(r.id, pool, {
-          drawMode,
-          allowDuplicates,
-        });
+        
+        // 过滤掉已使用的值和本轮已抽取的值
+        const availablePool = pool.filter(
+          (item) => !usedValuesRef.current.has(item) && !currentRoundUsed.has(item)
+        );
+
+        if (availablePool.length === 0) {
+          return { id: r.id, value: "?" };
+        }
+
+        // 随机选择一个值
+        const newValue = availablePool[Math.floor(Math.random() * availablePool.length)];
+        
+        // 立即添加到本轮已使用集合，防止后续轮换位抽到相同值
+        currentRoundUsed.add(newValue);
 
         console.log(`[不放回-继续] 轮换位${index} 抽到:`, newValue);
         return { id: r.id, value: newValue };
