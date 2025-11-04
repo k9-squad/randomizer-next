@@ -88,65 +88,69 @@ export default function RandomizerPage({
 
   // 加载项目数据
   useEffect(() => {
-    const project = getProject(id);
+    const loadProject = async () => {
+      const project = await getProject(id);
 
-    if (project) {
-      setProjectName(project.name);
-      setLocationText(project.config.locationText || "");
-      setSpeed(Math.max(15, Math.min(60, project.config.speed)));
-      setIsOwner(project.isOwner !== false);
+      if (project) {
+        setProjectName(project.name);
+        setLocationText(project.config.locationText || "");
+        setSpeed(Math.max(15, Math.min(60, project.config.speed)));
+        setIsOwner(project.isOwner !== false);
 
-      if (project.config.mode === "lottery") {
-        // 抽奖模式
-        setMode("lottery");
-        const lotteryConfig = project.config as LotteryConfig;
+        if (project.config.mode === "lottery") {
+          // 抽奖模式
+          setMode("lottery");
+          const lotteryConfig = project.config as LotteryConfig;
 
-        if (lotteryConfig.poolType === "shared" && lotteryConfig.sharedPool) {
-          setSharedPool(lotteryConfig.sharedPool);
-          sharedPoolRef.current = lotteryConfig.sharedPool;
-        }
+          if (lotteryConfig.poolType === "shared" && lotteryConfig.sharedPool) {
+            setSharedPool(lotteryConfig.sharedPool);
+            sharedPoolRef.current = lotteryConfig.sharedPool;
+          }
 
-        setRotators(
-          lotteryConfig.rotators.map((r) => ({
-            id: r.id.toString(),
-            label: r.label,
-            currentValue: "?",
-            isSpinning: false,
-            pool: r.individualPool,
-          }))
-        );
-      } else if (project.config.mode === "grouping") {
-        // 分组模式
-        setMode("grouping");
-        const groupingConfig = project.config as GroupingConfig;
-
-        // 如果已有分组结果，加载；否则初始生成
-        if (groupingConfig.groups && groupingConfig.groups.length > 0) {
-          setGroups(
-            groupingConfig.groups.map((g) => ({ ...g, isAnimating: false }))
+          setRotators(
+            lotteryConfig.rotators.map((r) => ({
+              id: r.id.toString(),
+              label: r.label,
+              currentValue: "?",
+              isSpinning: false,
+              pool: r.individualPool,
+            }))
           );
-        } else {
-          // 初次生成分组
-          const newGroups = distributeMembers(
-            groupingConfig.members,
-            groupingConfig.groupCount
-          );
-          setGroups(newGroups.map((g) => ({ ...g, isAnimating: false })));
+        } else if (project.config.mode === "grouping") {
+          // 分组模式
+          setMode("grouping");
+          const groupingConfig = project.config as GroupingConfig;
 
-          // 保存到 localStorage
-          const updatedConfig: GroupingConfig = {
-            ...groupingConfig,
-            groups: newGroups,
-          };
-          saveProject({
-            ...project,
-            config: updatedConfig,
-          });
+          // 如果已有分组结果，加载；否则初始生成
+          if (groupingConfig.groups && groupingConfig.groups.length > 0) {
+            setGroups(
+              groupingConfig.groups.map((g) => ({ ...g, isAnimating: false }))
+            );
+          } else {
+            // 初次生成分组
+            const newGroups = distributeMembers(
+              groupingConfig.members,
+              groupingConfig.groupCount
+            );
+            setGroups(newGroups.map((g) => ({ ...g, isAnimating: false })));
+
+            // 保存到 localStorage
+            const updatedConfig: GroupingConfig = {
+              ...groupingConfig,
+              groups: newGroups,
+            };
+            await saveProject({
+              ...project,
+              config: updatedConfig,
+            });
+          }
         }
+      } else {
+        router.push("/dashboard/my-projects");
       }
-    } else {
-      router.push("/dashboard/my-projects");
-    }
+    };
+    
+    loadProject();
   }, [id, router]);
 
   // ============ 抽奖模式函数 ============
@@ -214,7 +218,7 @@ export default function RandomizerPage({
     // 延迟后重新分组
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const project = getProject(id);
+    const project = await getProject(id);
     if (project && project.config.mode === "grouping") {
       const groupingConfig = project.config as GroupingConfig;
       const newGroups = distributeMembers(
@@ -229,7 +233,7 @@ export default function RandomizerPage({
         ...groupingConfig,
         groups: newGroups,
       };
-      saveProject({
+      await saveProject({
         ...project,
         config: updatedConfig,
       });
