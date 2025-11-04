@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { getLighterColor } from "@/lib/color-utils";
 import {
   Dices,
   Shuffle,
@@ -158,8 +159,9 @@ export default function CommunityPopularPage() {
                 {/* 上部：图标区域 */}
                 <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
                   <project.icon
-                    className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+                    className="h-20 w-20 group-hover:scale-110 transition-all duration-300"
                     strokeWidth={1.5}
+                    style={{ color: getLighterColor(project.gradient) }}
                   />
                 </div>
 

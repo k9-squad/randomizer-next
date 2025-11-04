@@ -26,6 +26,7 @@ import { useState, useEffect } from "react";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ProjectCard, NewProjectCard } from "@/components/project-card";
 import { getAllProjects, type StoredProject } from "@/lib/storage";
+import { getLighterColor } from "@/lib/color-utils";
 
 export default function DashboardPage() {
   const [userType, setUserType] = useState<string | null>(null);
@@ -221,8 +222,9 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <template.Icon
-                      className="h-14 w-14 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all flex-shrink-0"
+                      className="h-14 w-14 group-hover:scale-110 transition-all flex-shrink-0"
                       strokeWidth={1.5}
+                      style={{ color: getLighterColor(template.gradient) }}
                     />
                   </div>
                 </Card>
@@ -309,8 +311,9 @@ export default function DashboardPage() {
                   {/* 上部：图标区域 */}
                   <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
                     <project.icon
-                      className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+                      className="h-20 w-20 group-hover:scale-110 transition-all duration-300"
                       strokeWidth={1.5}
+                      style={{ color: getLighterColor(project.gradient) }}
                     />
                   </div>
 

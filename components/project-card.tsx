@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
+import { getLighterColor } from "@/lib/color-utils";
 
 interface ProjectCardProps {
   id: string | number;
@@ -46,8 +47,9 @@ export function ProjectCard({
             />
           ) : Icon ? (
             <Icon
-              className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+              className="h-20 w-20 group-hover:scale-110 transition-all duration-300"
               strokeWidth={1.5}
+              style={{ color: getLighterColor(gradientFrom) }}
             />
           ) : null}
         </div>
@@ -95,21 +97,19 @@ export function NewProjectCard() {
     <Link href="/new" className="flex-shrink-0 block">
       <Card className="w-full min-w-[280px] h-[240px] transition-all duration-300 cursor-pointer border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:scale-[1.02] bg-transparent flex items-center justify-center group">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-16 w-16 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
-            <svg
-              className="h-8 w-8 text-primary transition-transform group-hover:scale-110"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </div>
+          <svg
+            className="h-16 w-16 text-primary transition-transform group-hover:scale-110"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
           <p className="text-sm font-medium text-muted-foreground">
             创建新项目
           </p>

@@ -135,9 +135,7 @@ export default function NewProjectPage() {
               }}
             />
             <div className="relative p-8 flex flex-col gap-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Dices className="h-8 w-8 text-primary" strokeWidth={1.5} />
-              </div>
+              <Dices className="h-16 w-16 text-primary" strokeWidth={1.5} />
 
               <div className="flex flex-col gap-3">
                 <h2 className="text-2xl font-bold">抽奖模式</h2>
@@ -176,9 +174,7 @@ export default function NewProjectPage() {
               }}
             />
             <div className="relative p-8 flex flex-col gap-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Users className="h-8 w-8 text-primary" strokeWidth={1.5} />
-              </div>
+              <Users className="h-16 w-16 text-primary" strokeWidth={1.5} />
 
               <div className="flex flex-col gap-3">
                 <h2 className="text-2xl font-bold">分组模式</h2>

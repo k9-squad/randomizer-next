@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ProjectCard } from "@/components/project-card";
+import { getLighterColor } from "@/lib/color-utils";
 
 export default function CommunityPage() {
   const [luckyProjects, setLuckyProjects] = useState([
@@ -299,8 +300,9 @@ export default function CommunityPage() {
                   <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div className="flex items-center gap-3">
                       <category.icon
-                        className="h-8 w-8 text-foreground/40 group-hover:text-foreground/60 transition-colors flex-shrink-0"
+                        className="h-8 w-8 transition-colors flex-shrink-0"
                         strokeWidth={1.5}
+                        style={{ color: getLighterColor(category.gradient) }}
                       />
                       <div>
                         <h3 className="text-base font-semibold">
@@ -344,8 +346,9 @@ export default function CommunityPage() {
                 >
                   <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
                     <project.icon
-                      className="h-20 w-20 text-foreground/40 group-hover:text-foreground/60 group-hover:scale-110 transition-all duration-300"
+                      className="h-20 w-20 group-hover:scale-110 transition-all duration-300"
                       strokeWidth={1.5}
+                      style={{ color: getLighterColor(project.gradient) }}
                     />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">

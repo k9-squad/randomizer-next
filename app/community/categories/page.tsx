@@ -3,6 +3,7 @@
 import { ProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getLighterColor } from "@/lib/color-utils";
 import {
   Dices,
   Users as UsersIcon,
@@ -234,8 +235,9 @@ export default function CategoriesPage() {
                 <div className="absolute inset-0 flex items-center justify-between px-6">
                   <div className="flex items-center gap-4">
                     <category.icon
-                      className="h-12 w-12 text-foreground/40 group-hover:text-foreground/60 transition-colors flex-shrink-0"
+                      className="h-12 w-12 transition-colors flex-shrink-0"
                       strokeWidth={1.5}
+                      style={{ color: getLighterColor(category.gradient) }}
                     />
                     <div>
                       <h2 className="text-xl font-semibold mb-1">
