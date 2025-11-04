@@ -38,9 +38,15 @@ export default function DashboardPage() {
       setUserType(localStorage.getItem("userType"));
       setUserName(localStorage.getItem("userName") || "用户");
 
-      // 加载用户项目
+      // 加载用户项目并按修改时间排序（最新的在前）
       const projects = getAllProjects();
-      setMyProjects(projects.filter((p) => p.isOwner !== false));
+      const userProjects = projects.filter((p) => p.isOwner !== false);
+      userProjects.sort((a, b) => {
+        const timeA = new Date(a.updatedAt).getTime();
+        const timeB = new Date(b.updatedAt).getTime();
+        return timeB - timeA; // 降序：最新的在前
+      });
+      setMyProjects(userProjects);
     }
   }, []);
 
