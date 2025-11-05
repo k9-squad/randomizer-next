@@ -39,6 +39,9 @@ import type {
 } from "@/types/project";
 import { validateGroupingConfig } from "@/lib/grouping";
 import { INPUT_LIMITS } from "@/lib/constants";
+import { GroupingConfigSection } from "@/components/settings/grouping-config-section";
+import { IconPicker } from "@/components/settings/icon-picker";
+import { ColorPicker } from "@/components/settings/color-picker";
 
 // 限制每行长度的辅助函数
 function limitTextareaLines(text: string, maxLineLength: number): string {
@@ -87,9 +90,6 @@ export default function ProjectSettingsPage({
     { id: "3", name: "第 3 组" },
   ]);
 
-  // 图标分类筛选状态
-  const [iconCategory, setIconCategory] = useState<string>("all");
-
   // 速度映射
   const speedMap = {
     slow: 15,
@@ -131,30 +131,8 @@ export default function ProjectSettingsPage({
     "其他",
   ];
 
-  // 预设主题色
-  const presetColors = [
-    { name: "紫色", value: "#a855f7" },
-    { name: "蓝色", value: "#3b82f6" },
-    { name: "青色", value: "#06b6d4" },
-    { name: "绿色", value: "#10b981" },
-    { name: "黄色", value: "#f59e0b" },
-    { name: "橙色", value: "#f97316" },
-    { name: "红色", value: "#ef4444" },
-    { name: "粉色", value: "#ec4899" },
-  ];
-
-  // 图标分类定义
-  const iconCategories = [
-    { id: "all", name: "全部", icon: "Grid3x3" },
-    { id: "random", name: "随机抽奖", icon: "Dices" },
-    { id: "food", name: "餐饮美食", icon: "UtensilsCrossed" },
-    { id: "team", name: "团队协作", icon: "Users" },
-    { id: "game", name: "娱乐游戏", icon: "Gamepad2" },
-    { id: "emotion", name: "情感表达", icon: "Smile" },
-  ];
-
-  // 常用图标 - 按使用场景分类
-  const iconsByCategory: Record<string, string[]> = {
+  // 这些常量已移到组件内部
+  const iconsByCategory_removed: Record<string, string[]> = {
     random: [
       "Dices",
       "Shuffle",
@@ -266,12 +244,6 @@ export default function ProjectSettingsPage({
       "Rainbow",
     ],
   };
-
-  // 获取筛选后的图标
-  const filteredIcons =
-    iconCategory === "all"
-      ? Object.values(iconsByCategory).flat()
-      : iconsByCategory[iconCategory] || [];
 
   // Load existing project
   useEffect(() => {
@@ -931,323 +903,31 @@ export default function ProjectSettingsPage({
 
         {/* 分组模式配置 */}
         {mode === "grouping" && (
-          <>
-            <Card className="p-6 flex flex-col gap-4">
-              <h2 className="text-xl font-semibold">成员列表</h2>
-              <p className="text-sm text-muted-foreground">
-                每行一个成员名称（最多50字符/行），这些成员将被随机分配到各个组中
-              </p>
-              <textarea
-                className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y font-mono"
-                placeholder={"张三\n李四\n王五\n赵六\n钱七\n孙八"}
-                value={members}
-                onChange={(e) =>
-                  setMembers(limitTextareaLines(e.target.value, 50))
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                当前成员数：{members.split("\n").filter((m) => m.trim()).length}
-              </p>
-            </Card>
-
-            <Card className="p-6 flex flex-col gap-4">
-              <h2 className="text-xl font-semibold">分组设置</h2>
-
-              <div className="flex flex-col gap-4">
-                {groups.map((group, index) => (
-                  <Card key={group.id} className="p-4 bg-secondary/20">
-                    <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
-                        <GripVertical className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          placeholder={`第 ${index + 1} 组`}
-                          value={group.name}
-                          onChange={(e) =>
-                            updateGroup(group.id, e.target.value.slice(0, 30))
-                          }
-                          maxLength={30}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {group.name.length}/30
-                        </p>
-                      </div>
-                      {groups.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeGroup(group.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-
-                {/* 添加分组按钮 */}
-                <button
-                  onClick={addGroup}
-                  className="p-6 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-muted-foreground/50 hover:bg-muted/30 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="text-sm font-medium">添加分组</span>
-                </button>
-              </div>
-
-              {/* 实时预览分组情况 */}
-              {members.trim() && groups.length > 0 && (
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium mb-2">预计分组情况：</p>
-                  {(() => {
-                    const memberCount = members
-                      .split("\n")
-                      .filter((m) => m.trim()).length;
-                    if (memberCount < groups.length) {
-                      return (
-                        <p className="text-sm text-destructive">
-                          ⚠️ 成员数量（{memberCount}）少于分组数量（
-                          {groups.length}
-                          ），请增加成员或减少分组数
-                        </p>
-                      );
-                    }
-                    const baseSize = Math.floor(memberCount / groups.length);
-                    const remainder = memberCount % groups.length;
-                    const groupsWithExtra = remainder;
-                    const groupsWithBase = groups.length - remainder;
-
-                    return (
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        {groupsWithBase > 0 && (
-                          <p>
-                            • {groupsWithBase} 个组，每组 {baseSize} 人
-                          </p>
-                        )}
-                        {groupsWithExtra > 0 && (
-                          <p>
-                            • {groupsWithExtra} 个组，每组 {baseSize + 1} 人
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </Card>
-          </>
+          <GroupingConfigSection
+            members={members}
+            groups={groups}
+            onMembersChange={setMembers}
+            onGroupsChange={setGroups}
+          />
         )}
 
         {/* 外观设置 */}
         <Card className="p-6 flex flex-col gap-4">
           <h2 className="text-xl font-semibold">外观设置</h2>
           <div className="flex flex-col gap-4">
-            {/* 主题色 */}
-            <div>
-              <label className="text-sm font-medium mb-3 block">主题色</label>
-              <div className="flex flex-wrap gap-2 items-center">
-                {presetColors.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setThemeColor(color.value)}
-                    className="group relative w-10 h-10 rounded-full transition-all hover:scale-110"
-                    title={color.name}
-                  >
-                    <div
-                      className={`absolute inset-0 rounded-full transition-all ${
-                        themeColor === color.value
-                          ? "ring-2 ring-offset-2 ring-offset-background"
-                          : ""
-                      }`}
-                      style={{
-                        backgroundColor: color.value,
-                        boxShadow:
-                          themeColor === color.value
-                            ? `0 0 0 2px ${color.value}`
-                            : "none",
-                      }}
-                    />
-                    {themeColor === color.value && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-white shadow-lg" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+            <ColorPicker value={themeColor} onChange={setThemeColor} />
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="relative w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:scale-110 transition-all flex items-center justify-center"
-                      title="自定义颜色"
-                      style={{
-                        backgroundColor: !presetColors.some(
-                          (c) => c.value === themeColor
-                        )
-                          ? themeColor
-                          : "transparent",
-                      }}
-                    >
-                      {presetColors.some((c) => c.value === themeColor) ? (
-                        <Pipette className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-white shadow-lg" />
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64">
-                    <div className="flex flex-col gap-3">
-                      <label className="text-sm font-medium">自定义颜色</label>
-                      <div className="flex gap-3 items-center">
-                        <Input
-                          type="color"
-                          value={themeColor}
-                          onChange={(e) => setThemeColor(e.target.value)}
-                          className="w-16 h-16 cursor-pointer p-1 border-2"
-                        />
-                        <div className="flex-1">
-                          <Input
-                            type="text"
-                            value={themeColor.toUpperCase()}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^#[0-9A-Fa-f]{0,6}$/.test(value)) {
-                                setThemeColor(value);
-                              }
-                            }}
-                            placeholder="#A855F7"
-                            className="font-mono"
-                            maxLength={7}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* 图标 */}
-            <div>
-              <label className="text-sm font-medium mb-3 block">图标</label>
-              <Tabs
-                value={iconType}
-                onValueChange={(value) =>
-                  setIconType(value as "lucide" | "image")
-                }
-                className="w-full"
-              >
-                <div className="flex flex-col md:flex-row md:items-start gap-3">
-                  <TabsList className="w-fit">
-                    <TabsTrigger value="lucide" className="gap-1.5">
-                      <Sparkles className="h-4 w-4" />
-                      图标库
-                    </TabsTrigger>
-                    <TabsTrigger value="image" className="gap-1.5">
-                      <ImageIcon className="h-4 w-4" />
-                      自定义图片
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <div className="flex-1">
-                    <TabsContent value="lucide" className="mt-0">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start"
-                          >
-                            {(() => {
-                              const IconComponent = (Icons as any)[
-                                selectedIcon
-                              ] as LucideIcon;
-                              return IconComponent ? (
-                                <>
-                                  <IconComponent className="h-5 w-5 mr-2" />
-                                  {selectedIcon}
-                                </>
-                              ) : (
-                                "选择图标"
-                              );
-                            })()}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[90vw] max-w-md p-0">
-                          <div className="flex h-[50vh] max-h-[400px]">
-                            {/* 左侧分类列表 */}
-                            <div className="w-20 border-r bg-muted/30 flex-shrink-0">
-                              <div className="overflow-y-auto h-full">
-                                {iconCategories.map((cat) => (
-                                  <button
-                                    key={cat.id}
-                                    onClick={() => setIconCategory(cat.id)}
-                                    className={`w-full px-2 py-2.5 text-left text-sm transition-colors border-l-2 ${
-                                      iconCategory === cat.id
-                                        ? "border-l-primary bg-background text-foreground font-medium"
-                                        : "border-l-transparent hover:bg-muted/50 text-muted-foreground"
-                                    }`}
-                                  >
-                                    {cat.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* 右侧图标网格 */}
-                            <div className="flex-1 overflow-y-auto">
-                              <div className="p-2.5">
-                                {filteredIcons.length > 0 ? (
-                                  <div className="grid grid-cols-5 gap-2.5">
-                                    {filteredIcons.map((iconName) => {
-                                      const IconComponent = (Icons as any)[
-                                        iconName
-                                      ] as LucideIcon;
-                                      return (
-                                        <button
-                                          key={iconName}
-                                          onClick={() => {
-                                            setSelectedIcon(iconName);
-                                            setHasUnsavedChanges(true);
-                                          }}
-                                          className={`aspect-square p-2 rounded-md border-2 transition-colors ${
-                                            selectedIcon === iconName
-                                              ? "border-primary bg-accent"
-                                              : "border-transparent hover:border-primary/50 hover:bg-accent"
-                                          }`}
-                                          title={iconName}
-                                        >
-                                          {IconComponent && (
-                                            <IconComponent className="w-full h-full" />
-                                          )}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <div className="text-center py-8 text-muted-foreground text-sm">
-                                    该分类暂无图标
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </TabsContent>
-
-                    <TabsContent value="image" className="mt-0">
-                      <Input
-                        type="url"
-                        placeholder="输入图片 URL..."
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                      />
-                    </TabsContent>
-                  </div>
-                </div>
-              </Tabs>
-            </div>
+            <IconPicker
+              iconType={iconType}
+              selectedIcon={selectedIcon}
+              imageUrl={imageUrl}
+              onIconTypeChange={setIconType}
+              onIconChange={(icon) => {
+                setSelectedIcon(icon);
+                setHasUnsavedChanges(true);
+              }}
+              onImageUrlChange={setImageUrl}
+            />
 
             {/* 预览 */}
             <div className="p-4 bg-secondary/20 rounded-lg">
