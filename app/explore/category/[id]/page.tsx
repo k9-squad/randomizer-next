@@ -5,7 +5,12 @@ import { CommunityProjectCard } from "@/components/community-project-card";
 import { PageContainer } from "@/components/page-container";
 import { BackHeader } from "@/components/back-header";
 import { ProjectGrid } from "@/components/project-grid";
-import { Empty, EmptyIcon, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
 import { CATEGORIES } from "@/lib/mock-data";
 
 interface CategoryPageProps {
@@ -26,7 +31,9 @@ interface CommunityProject {
 export default function CategoryDetailPage({ params }: CategoryPageProps) {
   const { id } = use(params);
   const categoryId = parseInt(id);
-  const [categoryProjects, setCategoryProjects] = useState<CommunityProject[]>([]);
+  const [categoryProjects, setCategoryProjects] = useState<CommunityProject[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   // 使用全局分类定义
@@ -36,12 +43,14 @@ export default function CategoryDetailPage({ params }: CategoryPageProps) {
   useEffect(() => {
     const loadCategoryProjects = async () => {
       if (!category) return;
-      
+
       try {
         setLoading(true);
         // 根据分类名称获取项目（通过标签筛选）
         const res = await fetch(
-          `/api/community/projects?category=${encodeURIComponent(category.name)}&limit=20`
+          `/api/community/projects?category=${encodeURIComponent(
+            category.name
+          )}&limit=20`
         );
         if (res.ok) {
           const data = await res.json();
@@ -59,10 +68,7 @@ export default function CategoryDetailPage({ params }: CategoryPageProps) {
 
   return (
     <PageContainer>
-      <BackHeader
-        title={category.name}
-        description={category.description}
-      />
+      <BackHeader title={category.name} description={category.description} />
 
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
