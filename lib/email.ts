@@ -1,6 +1,18 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// 延迟初始化 Resend，避免在构建时因缺少 API 密钥而失败
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 interface SendVerificationEmailParams {
   email: string;
@@ -19,7 +31,8 @@ export async function sendVerificationEmail({
   const verifyUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const client = getResendClient();
+    const { data, error } = await client.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
       to: email,
       subject: '验证你的邮箱 - Randomizer',
@@ -130,7 +143,8 @@ export async function sendPasswordResetEmail({
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const client = getResendClient();
+    const { data, error } = await client.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
       to: email,
       subject: '重置密码 - Randomizer',
