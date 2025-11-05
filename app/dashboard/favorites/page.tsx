@@ -13,6 +13,7 @@ import * as Icons from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { GridSkeleton } from "@/components/skeletons";
 
 interface FavoriteProject {
   id: string;
@@ -86,9 +87,7 @@ export default function FavoritesPage() {
 
         {/* Favorites Grid */}
         {loading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg">加载中...</p>
-          </div>
+          <GridSkeleton count={8} columns={4} cardType="project" />
         ) : favorites.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Star className="h-16 w-16 text-muted-foreground/40 mb-4" />

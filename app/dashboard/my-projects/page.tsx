@@ -15,14 +15,17 @@ import * as Icons from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAllProjects, type StoredProject } from "@/lib/storage";
+import { GridSkeleton } from "@/components/skeletons";
 
 export default function MyProjectsPage() {
   const router = useRouter();
   const [projects, setProjects] = useState<StoredProject[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // 获取所有项目并按修改时间排序（最新的在前）
     const loadProjects = async () => {
+      setLoading(true);
       const allProjects = await getAllProjects();
       allProjects.sort((a, b) => {
         const timeA = new Date(a.updatedAt).getTime();
@@ -30,6 +33,7 @@ export default function MyProjectsPage() {
         return timeB - timeA; // 降序：最新的在前
       });
       setProjects(allProjects);
+      setLoading(false);
     };
 
     loadProjects();
@@ -63,43 +67,47 @@ export default function MyProjectsPage() {
         </div>
 
         {/* Projects Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {projects.map((project) => {
-            // 获取图标
-            let icon: LucideIcon | undefined;
-            let iconUrl: string | undefined;
+        {loading ? (
+          <GridSkeleton count={8} columns={4} cardType="project" />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {projects.map((project) => {
+              // 获取图标
+              let icon: LucideIcon | undefined;
+              let iconUrl: string | undefined;
 
-            if (project.iconType === "image" && project.iconUrl) {
-              iconUrl = project.iconUrl;
-            } else if (project.iconName) {
-              icon = (Icons as any)[project.iconName] as LucideIcon;
-            } else {
-              // 默认图标：根据模式选择
-              icon = project.config.mode === "grouping" ? Shuffle : Dices;
-            }
+              if (project.iconType === "image" && project.iconUrl) {
+                iconUrl = project.iconUrl;
+              } else if (project.iconName) {
+                icon = (Icons as any)[project.iconName] as LucideIcon;
+              } else {
+                // 默认图标：根据模式选择
+                icon = project.config.mode === "grouping" ? Shuffle : Dices;
+              }
 
-            // 获取主题色
-            const themeColor = project.themeColor || "#a855f7";
-            const gradientFrom = `${themeColor}26`; // 15% opacity
-            const gradientTo = `${themeColor}0d`; // 5% opacity
+              // 获取主题色
+              const themeColor = project.themeColor || "#a855f7";
+              const gradientFrom = `${themeColor}26`; // 15% opacity
+              const gradientTo = `${themeColor}0d`; // 5% opacity
 
-            return (
-              <ProjectCard
-                id={project.id}
-                name={project.name}
-                icon={icon}
-                iconUrl={iconUrl}
-                gradientFrom={gradientFrom}
-                gradientTo={gradientTo}
-                creatorName="我"
-                tags={project.tags || []}
-              />
-            );
-          })}
-          <NewProjectCard key="new-project" />
-        </div>
+              return (
+                <ProjectCard
+                  id={project.id}
+                  name={project.name}
+                  icon={icon}
+                  iconUrl={iconUrl}
+                  gradientFrom={gradientFrom}
+                  gradientTo={gradientTo}
+                  creatorName="我"
+                  tags={project.tags || []}
+                />
+              );
+            })}
+            <NewProjectCard key="new-project" />
+          </div>
+        )}
 
-        {projects.length === 0 && (
+        {!loading && projects.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg mb-4">还没有项目</p>
             <Link href="/new">

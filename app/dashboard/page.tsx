@@ -28,6 +28,11 @@ import { ProjectCard, NewProjectCard } from "@/components/project-card";
 import { getAllProjects, type StoredProject } from "@/lib/storage";
 import { getLighterColor } from "@/lib/color-utils";
 import { useSession } from "next-auth/react";
+import {
+  HorizontalScrollSkeleton,
+  GridSkeleton,
+  StatCardSkeleton,
+} from "@/components/skeletons";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -38,8 +43,10 @@ export default function DashboardPage() {
   const [communityProjects, setCommunityProjects] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     if (typeof window !== "undefined") {
       setUserType(localStorage.getItem("userType"));
       // 优先使用session中的用户名
@@ -102,10 +109,12 @@ export default function DashboardPage() {
         }
       };
 
-      loadProjects();
-      loadOfficialTemplates();
-      loadCommunityProjects();
-      loadFavorites();
+      Promise.all([
+        loadProjects(),
+        loadOfficialTemplates(),
+        loadCommunityProjects(),
+        loadFavorites(),
+      ]).finally(() => setLoading(false));
     }
   }, [session?.user?.name, session?.user?.id]);
 
@@ -174,7 +183,9 @@ export default function DashboardPage() {
 
           {/* Projects Horizontal Scroll */}
           <div className="relative">
-            {myProjects.length > 0 ? (
+            {loading ? (
+              <HorizontalScrollSkeleton count={3} />
+            ) : myProjects.length > 0 ? (
               <HorizontalScroll className="flex gap-4 pb-4 pl-2">
                 {myProjects.map((project) => {
                   let icon: LucideIcon | undefined;
@@ -373,50 +384,54 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(showAllTemplates
-              ? officialTemplates
-              : officialTemplates.slice(0, 6)
-            ).map((template) => {
-              let icon: LucideIcon | undefined;
-              if (template.icon_type === "lucide" && template.icon_name) {
-                icon = (Icons as any)[template.icon_name] as LucideIcon;
-              }
+          {loading ? (
+            <GridSkeleton count={6} columns={3} cardType="category" />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {(showAllTemplates
+                ? officialTemplates
+                : officialTemplates.slice(0, 6)
+              ).map((template) => {
+                let icon: LucideIcon | undefined;
+                if (template.icon_type === "lucide" && template.icon_name) {
+                  icon = (Icons as any)[template.icon_name] as LucideIcon;
+                }
 
-              const gradientFrom = template.theme_color
-                ? `${template.theme_color}26`
-                : "hsl(220 13% 69% / 0.15)";
+                const gradientFrom = template.theme_color
+                  ? `${template.theme_color}26`
+                  : "hsl(220 13% 69% / 0.15)";
 
-              return (
-                <Link key={template.id} href={`/app/official/${template.id}`}>
-                  <Card
-                    className="h-[100px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
-                    style={{
-                      background: `linear-gradient(270deg, ${gradientFrom} 0%, transparent 50%)`,
-                    }}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-between px-5">
-                      <div className="flex flex-col items-start">
-                        <h3 className="text-base font-semibold mb-1">
-                          {template.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {template.description}
-                        </p>
+                return (
+                  <Link key={template.id} href={`/app/official/${template.id}`}>
+                    <Card
+                      className="h-[100px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
+                      style={{
+                        background: `linear-gradient(270deg, ${gradientFrom} 0%, transparent 50%)`,
+                      }}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-between px-5">
+                        <div className="flex flex-col items-start">
+                          <h3 className="text-base font-semibold mb-1">
+                            {template.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {template.description}
+                          </p>
+                        </div>
+                        {icon &&
+                          React.createElement(icon, {
+                            className:
+                              "h-14 w-14 group-hover:scale-110 transition-all flex-shrink-0",
+                            strokeWidth: 1.5,
+                            style: { color: template.theme_color },
+                          })}
                       </div>
-                      {icon &&
-                        React.createElement(icon, {
-                          className:
-                            "h-14 w-14 group-hover:scale-110 transition-all flex-shrink-0",
-                          strokeWidth: 1.5,
-                          style: { color: template.theme_color },
-                        })}
-                    </div>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Community Popular Section */}
@@ -430,7 +445,9 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {communityProjects.length > 0 ? (
+          {loading ? (
+            <GridSkeleton count={6} columns={3} cardType="project" />
+          ) : communityProjects.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {communityProjects.map((project) => {
                 let icon: LucideIcon | undefined;

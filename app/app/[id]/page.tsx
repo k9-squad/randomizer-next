@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { getProject, saveProject } from "@/lib/storage";
 import { LotteryConfig, GroupingConfig, Group } from "@/types/project";
 import { distributeMembers } from "@/lib/grouping";
+import { AppPageSkeleton } from "@/components/skeletons";
 
 // ============ 抽奖模式相关 ============
 
@@ -43,6 +44,7 @@ export default function RandomizerPage({
   const router = useRouter();
 
   // 通用状态
+  const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState("随机器项目");
   const [locationText, setLocationText] = useState("");
   const [speed, setSpeed] = useState(30);
@@ -159,68 +161,75 @@ export default function RandomizerPage({
   // 加载项目数据
   useEffect(() => {
     const loadProject = async () => {
-      const project = await getProject(id);
+      try {
+        const project = await getProject(id);
 
-      if (project) {
-        setProjectName(project.name);
-        setLocationText(project.config.locationText || "");
-        setSpeed(Math.max(15, Math.min(60, project.config.speed)));
-        setIsOwner(project.isOwner !== false);
+        if (project) {
+          setProjectName(project.name);
+          setLocationText(project.config.locationText || "");
+          setSpeed(Math.max(15, Math.min(60, project.config.speed)));
+          setIsOwner(project.isOwner !== false);
 
-        if (project.config.mode === "lottery") {
-          // 抽奖模式
-          setMode("lottery");
-          const lotteryConfig = project.config as LotteryConfig;
+          if (project.config.mode === "lottery") {
+            // 抽奖模式
+            setMode("lottery");
+            const lotteryConfig = project.config as LotteryConfig;
 
-          setPoolType(lotteryConfig.poolType);
-          setDrawMode(lotteryConfig.drawMode);
-          setAllowDuplicates(lotteryConfig.allowDuplicates ?? true);
+            setPoolType(lotteryConfig.poolType);
+            setDrawMode(lotteryConfig.drawMode);
+            setAllowDuplicates(lotteryConfig.allowDuplicates ?? true);
 
-          if (lotteryConfig.poolType === "shared" && lotteryConfig.sharedPool) {
-            setSharedPool(lotteryConfig.sharedPool);
-            sharedPoolRef.current = lotteryConfig.sharedPool;
-          }
+            if (
+              lotteryConfig.poolType === "shared" &&
+              lotteryConfig.sharedPool
+            ) {
+              setSharedPool(lotteryConfig.sharedPool);
+              sharedPoolRef.current = lotteryConfig.sharedPool;
+            }
 
-          setRotators(
-            lotteryConfig.rotators.map((r) => ({
-              id: r.id.toString(),
-              label: r.label,
-              currentValue: "?",
-              isSpinning: false,
-              pool: r.individualPool,
-            }))
-          );
-        } else if (project.config.mode === "grouping") {
-          // 分组模式
-          setMode("grouping");
-          const groupingConfig = project.config as GroupingConfig;
-
-          // 如果已有分组结果，加载；否则初次生成
-          if (groupingConfig.groups && groupingConfig.groups.length > 0) {
-            setGroups(
-              groupingConfig.groups.map((g) => ({ ...g, isAnimating: false }))
+            setRotators(
+              lotteryConfig.rotators.map((r) => ({
+                id: r.id.toString(),
+                label: r.label,
+                currentValue: "?",
+                isSpinning: false,
+                pool: r.individualPool,
+              }))
             );
-          } else {
-            // 初次生成分组
-            const newGroups = distributeMembers(
-              groupingConfig.members,
-              groupingConfig.groupCount
-            );
-            setGroups(newGroups.map((g) => ({ ...g, isAnimating: false })));
+          } else if (project.config.mode === "grouping") {
+            // 分组模式
+            setMode("grouping");
+            const groupingConfig = project.config as GroupingConfig;
 
-            // 保存到 localStorage
-            const updatedConfig: GroupingConfig = {
-              ...groupingConfig,
-              groups: newGroups,
-            };
-            await saveProject({
-              ...project,
-              config: updatedConfig,
-            });
+            // 如果已有分组结果，加载；否则初次生成
+            if (groupingConfig.groups && groupingConfig.groups.length > 0) {
+              setGroups(
+                groupingConfig.groups.map((g) => ({ ...g, isAnimating: false }))
+              );
+            } else {
+              // 初次生成分组
+              const newGroups = distributeMembers(
+                groupingConfig.members,
+                groupingConfig.groupCount
+              );
+              setGroups(newGroups.map((g) => ({ ...g, isAnimating: false })));
+
+              // 保存到 localStorage
+              const updatedConfig: GroupingConfig = {
+                ...groupingConfig,
+                groups: newGroups,
+              };
+              await saveProject({
+                ...project,
+                config: updatedConfig,
+              });
+            }
           }
+        } else {
+          router.push("/dashboard/my-projects");
         }
-      } else {
-        router.push("/dashboard/my-projects");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -516,6 +525,10 @@ export default function RandomizerPage({
       Object.keys(intervalRefs.current).forEach(stopSpinning);
     };
   }, []);
+
+  if (loading) {
+    return <AppPageSkeleton mode={mode} />;
+  }
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6 pb-32">

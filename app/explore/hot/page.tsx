@@ -12,6 +12,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
+import { GridSkeleton } from "@/components/skeletons";
 
 interface CommunityProject {
   id: string;
@@ -55,9 +56,7 @@ export default function HotProjectsPage() {
       />
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg">加载中...</p>
-        </div>
+        <GridSkeleton count={12} columns={4} cardType="project" />
       ) : hotProjects.length === 0 ? (
         <Empty>
           <EmptyIcon>

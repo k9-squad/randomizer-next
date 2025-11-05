@@ -18,6 +18,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { CATEGORIES } from "@/lib/mock-data";
+import { HorizontalScrollSkeleton, GridSkeleton } from "@/components/skeletons";
 
 interface CommunityProject {
   id: string;
@@ -114,9 +115,7 @@ export default function ExplorePage() {
       {/* Hot Projects Section */}
       <SectionWrapper title="热门项目" href="/explore/hot">
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            加载中...
-          </div>
+          <HorizontalScrollSkeleton count={4} />
         ) : hotProjects.length === 0 ? (
           <Empty>
             <EmptyIcon>
@@ -139,9 +138,7 @@ export default function ExplorePage() {
       {/* Latest Projects Section */}
       <SectionWrapper title="最新上传" href="/explore/latest">
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            加载中...
-          </div>
+          <HorizontalScrollSkeleton count={4} />
         ) : latestProjects.length === 0 ? (
           <Empty>
             <EmptyIcon>
@@ -163,44 +160,51 @@ export default function ExplorePage() {
 
       {/* Categories Section */}
       <SectionWrapper title="类别" href="/explore/categories">
-        <ProjectGrid columns={3}>
-          {CATEGORIES.map((category) => {
-            // 从 API 获取真实的分类计数
-            const countData = categoryCounts.find(
-              (c) => c.name === category.name
-            );
-            const realCount = countData?.count ?? 0;
+        {loading ? (
+          <GridSkeleton count={8} columns={3} cardType="category" />
+        ) : (
+          <ProjectGrid columns={3}>
+            {CATEGORIES.map((category) => {
+              // 从 API 获取真实的分类计数
+              const countData = categoryCounts.find(
+                (c) => c.name === category.name
+              );
+              const realCount = countData?.count ?? 0;
 
-            return (
-              <Link key={category.id} href={`/explore/category/${category.id}`}>
-                <Card
-                  className="h-[80px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
-                  style={{
-                    background: `linear-gradient(270deg, ${category.gradient} 0%, transparent 50%)`,
-                  }}
+              return (
+                <Link
+                  key={category.id}
+                  href={`/explore/category/${category.id}`}
                 >
-                  <div className="absolute inset-0 flex items-center justify-between px-4">
-                    <div className="flex items-center gap-3">
-                      <category.icon
-                        className="h-8 w-8 transition-colors flex-shrink-0"
-                        strokeWidth={1.5}
-                        style={{ color: getLighterColor(category.gradient) }}
-                      />
-                      <div>
-                        <h3 className="text-base font-semibold">
-                          {category.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {realCount} 个项目
-                        </p>
+                  <Card
+                    className="h-[80px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
+                    style={{
+                      background: `linear-gradient(270deg, ${category.gradient} 0%, transparent 50%)`,
+                    }}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-between px-4">
+                      <div className="flex items-center gap-3">
+                        <category.icon
+                          className="h-8 w-8 transition-colors flex-shrink-0"
+                          strokeWidth={1.5}
+                          style={{ color: getLighterColor(category.gradient) }}
+                        />
+                        <div>
+                          <h3 className="text-base font-semibold">
+                            {category.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {realCount} 个项目
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </ProjectGrid>
+                  </Card>
+                </Link>
+              );
+            })}
+          </ProjectGrid>
+        )}
       </SectionWrapper>
 
       {/* Lucky Pick Section */}
@@ -220,9 +224,7 @@ export default function ExplorePage() {
         }
       >
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            加载中...
-          </div>
+          <GridSkeleton count={2} columns={2} cardType="project" />
         ) : luckyProjects.length === 0 ? (
           <Empty>
             <EmptyIcon>

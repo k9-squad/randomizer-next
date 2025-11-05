@@ -7,6 +7,7 @@ import { PageContainer } from "@/components/page-container";
 import { BackHeader } from "@/components/back-header";
 import { CATEGORIES } from "@/lib/mock-data";
 import Link from "next/link";
+import { LargeCategoryCardSkeleton } from "@/components/skeletons";
 
 interface CategoryCount {
   name: string;
@@ -51,8 +52,10 @@ export default function CategoriesPage() {
       <BackHeader title="类别" description="按类别浏览所有随机器项目" />
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg">加载中...</p>
+        <div className="flex flex-col gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <LargeCategoryCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="flex flex-col gap-6">
