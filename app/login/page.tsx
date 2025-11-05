@@ -148,7 +148,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button
+              {/* Google登录 - 暂时隐藏 */}
+              {/* <Button
                 type="button"
                 variant="outline"
                 className="w-full"
@@ -174,7 +175,7 @@ export default function LoginPage() {
                   />
                 </svg>
                 使用Google登录
-              </Button>
+              </Button> */}
 
               <Button
                 type="button"
