@@ -117,8 +117,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("projectId");
+    // 尝试从 body 或 query 参数获取 projectId
+    let projectId: string | null = null;
+    
+    try {
+      const body = await request.json();
+      projectId = body.projectId;
+    } catch {
+      // 如果 body 解析失败，尝试从 query 参数获取
+      const { searchParams } = new URL(request.url);
+      projectId = searchParams.get("projectId");
+    }
 
     if (!projectId) {
       return NextResponse.json(

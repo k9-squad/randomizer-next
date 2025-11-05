@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
       projectData = templates[0];
       originalAuthorId = null; // 官方模板没有原作者
-    } else if (projectType === "user") {
+    } else if (projectType === "user" || projectType === "community") {
       const projects = await sql`
         SELECT * FROM projects 
         WHERE id = ${projectId} AND is_public = true

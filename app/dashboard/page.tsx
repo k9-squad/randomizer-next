@@ -461,7 +461,7 @@ export default function DashboardPage() {
                   : "hsl(220 13% 69% / 0.15)";
 
                 return (
-                  <Link key={project.id} href={`/app/${project.id}`}>
+                  <Link key={project.id} href={`/app/community/${project.id}`}>
                     <Card
                       className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
                       style={{
