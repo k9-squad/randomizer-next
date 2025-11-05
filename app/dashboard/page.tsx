@@ -27,8 +27,10 @@ import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ProjectCard, NewProjectCard } from "@/components/project-card";
 import { getAllProjects, type StoredProject } from "@/lib/storage";
 import { getLighterColor } from "@/lib/color-utils";
+import { useSession } from "next-auth/react";
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
   const [userType, setUserType] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [myProjects, setMyProjects] = useState<StoredProject[]>([]);
@@ -36,7 +38,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setUserType(localStorage.getItem("userType"));
-      setUserName(localStorage.getItem("userName") || "用户");
+      // 优先使用session中的用户名
+      const name =
+        session?.user?.name || localStorage.getItem("userName") || "用户";
+      setUserName(name);
 
       // 加载用户项目并按修改时间排序（最新的在前）
       const loadProjects = async () => {
@@ -52,7 +57,7 @@ export default function DashboardPage() {
 
       loadProjects();
     }
-  }, []);
+  }, [session?.user?.name]);
 
   // 获取问候语
   const getGreeting = () => {

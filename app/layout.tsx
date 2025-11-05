@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header, BottomNav } from "@/components/layout";
-import { SessionProvider } from "next-auth/react";
+import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <SessionProvider>
+        <Providers>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
@@ -33,7 +33,7 @@ export default function RootLayout({
               <BottomNav />
             </div>
           </ThemeProvider>
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

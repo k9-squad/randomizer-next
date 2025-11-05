@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Camera,
   Mail,
@@ -19,26 +19,36 @@ import {
   AtSign,
   Shield,
   Settings,
+  ChevronDown,
+  AlertTriangle,
+  Hash,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [userType, setUserType] = useState<string | null>(null);
-  const [userName, setUserName] = useState("随机器用户");
-  const [email, setEmail] = useState("user@example.com");
+  const [userName, setUserName] = useState("");
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const type = localStorage.getItem("userType");
       setUserType(type);
-      setUserName(localStorage.getItem("userName") || "随机器用户");
+      // 优先使用session中的数据
+      if (session?.user) {
+        setUserName(session.user.name || "");
+      } else {
+        setUserName(localStorage.getItem("userName") || "");
+      }
     }
-  }, []);
+  }, [session?.user?.name]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const confirmMessage = isGuest
       ? "确定要退出游客模式吗？本地保存的数据将会保留，但下次需要重新登录。"
       : "确定要退出登录吗？";
@@ -46,25 +56,42 @@ export default function ProfilePage() {
     if (window.confirm(confirmMessage)) {
       localStorage.removeItem("userType");
       localStorage.removeItem("userName");
+
+      if (session) {
+        await signOut({ redirect: false });
+      }
+
       router.push("/dashboard");
-      window.location.reload();
+      router.refresh();
     }
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (
-      window.confirm("确定要删除账户吗？此操作无法撤销，所有数据将被永久删除！")
+      window.confirm(
+        "确定要删除账户吗？此操作无法撤销，所有数据将被永久删除！\n\n请输入你的密码以确认。"
+      )
     ) {
-      // 执行删除账户逻辑
+      // TODO: 实现真实的删除账户API调用
       localStorage.removeItem("userType");
       localStorage.removeItem("userName");
+
+      if (session) {
+        await signOut({ redirect: false });
+      }
+
       router.push("/dashboard");
-      window.location.reload();
+      router.refresh();
     }
+  };
+
+  const handleSaveProfile = async () => {
+    // TODO: 实现更新用户信息的API调用
+    alert("个人信息已保存！");
   };
 
   const isGuest = userType === "guest";
-  const isLoggedIn = userType === "user";
+  const isLoggedIn = session?.user || userType === "user";
 
   if (!userType) {
     return (
@@ -134,68 +161,94 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Avatar Card - Only for logged in users */}
-        {isLoggedIn && (
+        {/* User Profile Card - Only for logged in users */}
+        {isLoggedIn && session?.user && (
           <Card>
             <CardHeader>
-              <CardTitle>头像</CardTitle>
-              <CardDescription>点击头像上传新的头像图片</CardDescription>
+              <CardTitle>个人资料</CardTitle>
+              <CardDescription>你的账户信息和头像</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center gap-6">
-              <div className="relative group">
-                <Avatar className="h-24 w-24 border-2 border-muted">
-                  <AvatarFallback className="text-2xl">
-                    {userName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <button className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <Camera className="h-6 w-6 text-white" />
-                </button>
+            <CardContent className="space-y-6">
+              {/* Avatar Section */}
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <Avatar className="h-24 w-24 border-2 border-muted">
+                    <AvatarImage src={session.user.image || ""} />
+                    <AvatarFallback className="text-2xl">
+                      {(session.user.name || session.user.email)
+                        ?.charAt(0)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="h-6 w-6 text-white" />
+                  </button>
+                </div>
+                <div>
+                  <Button variant="outline" size="sm" disabled>
+                    上传头像
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    推荐尺寸：512x512px，最大 2MB
+                  </p>
+                </div>
               </div>
-              <div>
-                <Button variant="outline" size="sm">
-                  上传头像
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  推荐尺寸：512x512px，最大 2MB
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Profile Info Card - Only for logged in users */}
-        {isLoggedIn && (
-          <Card>
-            <CardHeader>
-              <CardTitle>个人信息</CardTitle>
-              <CardDescription>更新你的个人资料</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <UserIcon className="h-4 w-4" />
-                  昵称
-                </label>
-                <Input
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="输入你的昵称"
-                />
+              <div className="h-px bg-border" />
+
+              {/* User Info */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    昵称
+                  </label>
+                  <Input
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="输入你的昵称"
+                    maxLength={50}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    邮箱
+                  </label>
+                  <Input
+                    type="email"
+                    value={session.user.email || ""}
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    邮箱地址无法更改
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                    <Hash className="h-4 w-4" />
+                    用户 UID
+                  </label>
+                  <Input
+                    value={session.user.uid || ""}
+                    disabled
+                    className="bg-muted cursor-not-allowed font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    你的唯一标识符，用于分享和识别
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleSaveProfile}
+                  className="w-full sm:w-auto"
+                >
+                  保存更改
+                </Button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  邮箱
-                </label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="输入你的邮箱"
-                />
-              </div>
-              <Button className="w-full sm:w-auto">保存更改</Button>
             </CardContent>
           </Card>
         )}
@@ -205,33 +258,48 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              账户操作
+              账户管理
             </CardTitle>
             <CardDescription>
-              {isGuest ? "退出游客模式" : "管理你的账户"}
+              {isGuest ? "退出游客模式" : "登出或删除账户"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button
               variant="outline"
-              className={
-                isGuest
-                  ? "w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-white [&_svg]:hover:text-white"
-                  : "w-full justify-start"
-              }
+              className="w-full justify-start"
               onClick={handleLogout}
             >
-              <LogOut className="mr-1.5 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4" />
               {isGuest ? "退出游客模式" : "退出登录"}
             </Button>
-            {isLoggedIn && (
-              <Button
-                variant="outline"
-                className="w-full justify-start text-destructive border-destructive hover:bg-destructive hover:text-white [&_svg]:hover:text-white"
-                onClick={handleDeleteAccount}
-              >
-                删除账户
-              </Button>
+
+            {isLoggedIn && session?.user && (
+              <>
+                <div className="h-px bg-border my-4" />
+
+                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-destructive mb-1">
+                        危险操作
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        删除账户将永久删除你的所有数据，包括项目、收藏等，此操作无法撤销。
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleDeleteAccount}
+                  >
+                    删除我的账户
+                  </Button>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
