@@ -83,7 +83,9 @@ export function Header() {
             </Link>
             <Link href="/explore">
               <Button
-                variant={pathname?.startsWith("/explore") ? "secondary" : "ghost"}
+                variant={
+                  pathname?.startsWith("/explore") ? "secondary" : "ghost"
+                }
                 size="sm"
               >
                 <Compass className="mr-1.5 h-4 w-4" />
@@ -214,7 +216,9 @@ export function BottomNav() {
           href="/explore"
           className={cn(
             "flex items-center justify-center flex-1 py-2",
-            pathname?.startsWith("/explore") ? "text-primary" : "text-muted-foreground"
+            pathname?.startsWith("/explore")
+              ? "text-primary"
+              : "text-muted-foreground"
           )}
         >
           <Compass className="h-6 w-6" />
