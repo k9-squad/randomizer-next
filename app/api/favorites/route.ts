@@ -17,45 +17,23 @@ export async function GET(request: Request) {
       SELECT 
         f.id,
         f.project_id,
-        f.project_type,
         f.created_at,
-        CASE 
-          WHEN f.project_type = 'official' THEN (
-            SELECT json_build_object(
-              'id', ot.id,
-              'name', ot.name,
-              'description', ot.description,
-              'icon_type', ot.icon_type,
-              'icon_name', ot.icon_name,
-              'theme_color', ot.theme_color,
-              'type', 'official'
-            )
-            FROM official_templates ot
-            WHERE ot.id = f.project_id
-          )
-          ELSE (
-            SELECT json_build_object(
-              'id', p.id,
-              'name', p.name,
-              'description', p.description,
-              'icon_type', p.icon_type,
-              'icon_name', p.icon_name,
-              'theme_color', p.theme_color,
-              'tags', p.tags,
-              'star_count', p.star_count,
-              'type', 'user',
-              'author', json_build_object(
-                'id', u.id,
-                'name', u.name,
-                'uid', u.uid
-              )
-            )
-            FROM projects p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.id = f.project_id
-          )
-        END as project
+        p.id as project_id,
+        p.name,
+        p.description,
+        p.icon_type,
+        p.icon_name,
+        p.icon_url,
+        p.theme_color,
+        p.tags,
+        p.star_count,
+        p.copy_count,
+        u.id as author_id,
+        u.name as author_name,
+        u.uid as author_uid
       FROM favorites f
+      INNER JOIN projects p ON f.project_id = p.id
+      LEFT JOIN users u ON p.user_id = u.id
       WHERE f.user_id = ${session.user.id}
       ORDER BY f.created_at DESC
     `;
@@ -81,18 +59,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
 
-    const { projectId, projectType } = await request.json();
+    const { projectId } = await request.json();
 
-    if (!projectId || !projectType) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: "缺少参数" },
-        { status: 400 }
-      );
-    }
-
-    if (!["user", "official"].includes(projectType)) {
-      return NextResponse.json(
-        { error: "无效的项目类型" },
+        { error: "缺少项目ID" },
         { status: 400 }
       );
     }
@@ -102,7 +73,6 @@ export async function POST(request: Request) {
       SELECT id FROM favorites
       WHERE user_id = ${session.user.id}
         AND project_id = ${projectId}
-        AND project_type = ${projectType}
     `;
 
     if (existing.length > 0) {
@@ -114,19 +84,17 @@ export async function POST(request: Request) {
 
     // 添加收藏
     const result = await sql`
-      INSERT INTO favorites (user_id, project_id, project_type)
-      VALUES (${session.user.id}, ${projectId}, ${projectType})
+      INSERT INTO favorites (user_id, project_id)
+      VALUES (${session.user.id}, ${projectId})
       RETURNING *
     `;
 
     // 更新项目的 star_count
-    if (projectType === "user") {
-      await sql`
-        UPDATE projects
-        SET star_count = star_count + 1
-        WHERE id = ${projectId}
-      `;
-    }
+    await sql`
+      UPDATE projects
+      SET star_count = star_count + 1
+      WHERE id = ${projectId}
+    `;
 
     return NextResponse.json(result[0]);
   } catch (error) {
@@ -151,11 +119,10 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get("projectId");
-    const projectType = searchParams.get("projectType");
 
-    if (!projectId || !projectType) {
+    if (!projectId) {
       return NextResponse.json(
-        { error: "缺少参数" },
+        { error: "缺少项目ID" },
         { status: 400 }
       );
     }
@@ -165,7 +132,6 @@ export async function DELETE(request: Request) {
       DELETE FROM favorites
       WHERE user_id = ${session.user.id}
         AND project_id = ${projectId}
-        AND project_type = ${projectType}
       RETURNING *
     `;
 
@@ -177,13 +143,11 @@ export async function DELETE(request: Request) {
     }
 
     // 更新项目的 star_count
-    if (projectType === "user") {
-      await sql`
-        UPDATE projects
-        SET star_count = GREATEST(star_count - 1, 0)
-        WHERE id = ${projectId}
-      `;
-    }
+    await sql`
+      UPDATE projects
+      SET star_count = GREATEST(star_count - 1, 0)
+      WHERE id = ${projectId}
+    `;
 
     return NextResponse.json({ success: true });
   } catch (error) {

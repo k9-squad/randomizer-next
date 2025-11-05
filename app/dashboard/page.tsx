@@ -287,6 +287,69 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Favorites Section */}
+        {isLoggedIn && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <Link href="/dashboard/favorites" className="group">
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors">
+                    我的收藏
+                  </h2>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+              </Link>
+            </div>
+
+            <div className="relative">
+              {favorites.length > 0 ? (
+                <HorizontalScroll className="flex gap-4 pb-4 pl-2">
+                  {favorites.map((fav) => {
+                    let icon: LucideIcon | undefined;
+                    let iconUrl: string | undefined;
+
+                    if (fav.icon_type === "image" && fav.icon_url) {
+                      iconUrl = fav.icon_url;
+                    } else if (fav.icon_type === "lucide" && fav.icon_name) {
+                      icon = (Icons as any)[fav.icon_name] as LucideIcon;
+                    }
+
+                    const gradientFrom = fav.theme_color
+                      ? `${fav.theme_color}26`
+                      : "hsl(220 13% 69% / 0.15)";
+                    const gradientTo = fav.theme_color
+                      ? `${fav.theme_color}0d`
+                      : "hsl(220 13% 69% / 0.01)";
+
+                    return (
+                      <Link key={fav.id} href={`/app/${fav.project_id}`}>
+                        <ProjectCard
+                          id={fav.project_id}
+                          name={fav.name}
+                          icon={icon}
+                          iconUrl={iconUrl}
+                          gradientFrom={gradientFrom}
+                          gradientTo={gradientTo}
+                          creatorName={fav.author_name || "未知"}
+                          tags={fav.tags || []}
+                        />
+                      </Link>
+                    );
+                  })}
+                </HorizontalScroll>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed rounded-lg">
+                  <Star className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                  <h3 className="text-lg font-medium mb-1">还没有收藏</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    在社区中发现喜欢的项目，点击收藏星标即可添加到这里
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Official Templates Section */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -367,85 +430,95 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {communityProjects.map((project) => {
-              let icon: LucideIcon | undefined;
-              if (project.icon_type === "lucide" && project.icon_name) {
-                icon = (Icons as any)[project.icon_name] as LucideIcon;
-              }
+          {communityProjects.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {communityProjects.map((project) => {
+                let icon: LucideIcon | undefined;
+                if (project.icon_type === "lucide" && project.icon_name) {
+                  icon = (Icons as any)[project.icon_name] as LucideIcon;
+                }
 
-              const gradientFrom = project.theme_color
-                ? `${project.theme_color}26`
-                : "hsl(220 13% 69% / 0.15)";
+                const gradientFrom = project.theme_color
+                  ? `${project.theme_color}26`
+                  : "hsl(220 13% 69% / 0.15)";
 
-              return (
-                <Link key={project.id} href={`/app/${project.id}`}>
-                  <Card
-                    className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
-                    style={{
-                      background: `linear-gradient(180deg, ${gradientFrom} 0%, transparent 100%)`,
-                    }}
-                  >
-                    {/* 上部：图标区域 */}
-                    <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
-                      {icon &&
-                        React.createElement(icon, {
-                          className:
-                            "h-20 w-20 group-hover:scale-110 transition-all duration-300",
-                          strokeWidth: 1.5,
-                          style: { color: project.theme_color },
-                        })}
-                    </div>
-
-                    {/* 下部：文字信息区域 */}
-                    <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">
-                      {/* 标题和星标 */}
-                      <div className="flex items-start justify-between mb-auto">
-                        <h3 className="text-lg font-semibold truncate flex-1">
-                          {project.name}
-                        </h3>
-                        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                          <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-                          <span className="text-xs text-muted-foreground">
-                            {project.star_count || 0}
-                          </span>
-                        </div>
+                return (
+                  <Link key={project.id} href={`/app/${project.id}`}>
+                    <Card
+                      className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
+                      style={{
+                        background: `linear-gradient(180deg, ${gradientFrom} 0%, transparent 100%)`,
+                      }}
+                    >
+                      {/* 上部：图标区域 */}
+                      <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
+                        {icon &&
+                          React.createElement(icon, {
+                            className:
+                              "h-20 w-20 group-hover:scale-110 transition-all duration-300",
+                            strokeWidth: 1.5,
+                            style: { color: project.theme_color },
+                          })}
                       </div>
 
-                      {/* 底部区域：左边标签，右边用户 */}
-                      <div className="flex items-end justify-between gap-2">
-                        {/* 标签 - 左下角 */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {(project.tags || [])
-                            .slice(0, 2)
-                            .map((tag: string, index: number) => (
-                              <span
-                                key={index}
-                                className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                      {/* 下部：文字信息区域 */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">
+                        {/* 标题和星标 */}
+                        <div className="flex items-start justify-between mb-auto">
+                          <h3 className="text-lg font-semibold truncate flex-1">
+                            {project.name}
+                          </h3>
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                            <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+                            <span className="text-xs text-muted-foreground">
+                              {project.star_count || 0}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* 创建者信息 - 右下角 */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                            {project.author_name || "未知"}
-                          </span>
-                          <Avatar className="h-5 w-5 ring-1 ring-border">
-                            <AvatarFallback className="text-[10px]">
-                              {(project.author_name || "U").charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                        {/* 底部区域：左边标签，右边用户 */}
+                        <div className="flex items-end justify-between gap-2">
+                          {/* 标签 - 左下角 */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {(project.tags || [])
+                              .slice(0, 2)
+                              .map((tag: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                          </div>
+
+                          {/* 创建者信息 - 右下角 */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                              {project.author_name || "未知"}
+                            </span>
+                            <Avatar className="h-5 w-5 ring-1 ring-border">
+                              <AvatarFallback className="text-[10px]">
+                                {(project.author_name || "U").charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed rounded-lg">
+              <TrendingUp className="h-12 w-12 text-muted-foreground/40 mb-3" />
+              <h3 className="text-lg font-medium mb-1">暂无热门项目</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                成为第一个发布项目的用户，分享你的创意吧！
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
