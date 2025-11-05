@@ -112,7 +112,10 @@ export default function FavoritesPage() {
 
               if (favorite.icon_type === "image" && favorite.icon_url) {
                 iconUrl = favorite.icon_url;
-              } else if (favorite.icon_type === "lucide" && favorite.icon_name) {
+              } else if (
+                favorite.icon_type === "lucide" &&
+                favorite.icon_name
+              ) {
                 icon = (Icons as any)[favorite.icon_name] as LucideIcon;
               } else {
                 // 默认图标
