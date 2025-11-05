@@ -15,7 +15,7 @@ interface CommunityProjectCardProps {
     icon_name?: string;
     theme_color?: string;
     star_count?: number;
-    tags?: string[];
+    category?: string;
     author_name?: string;
   };
 }
@@ -62,20 +62,15 @@ export function CommunityProjectCard({ project }: CommunityProjectCardProps) {
             </div>
           </div>
 
-          {/* 底部区域：左边标签，右边用户 */}
+          {/* 底部区域：左边分类，右边用户 */}
           <div className="flex items-end justify-between gap-2">
-            {/* 标签 - 左下角 */}
+            {/* 分类标签 - 左下角 */}
             <div className="flex flex-wrap gap-1.5">
-              {(project.tags || [])
-                .slice(0, 2)
-                .map((tag: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              {project.category && (
+                <span className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium">
+                  {project.category}
+                </span>
+              )}
             </div>
 
             {/* 创建者信息 - 右下角 */}

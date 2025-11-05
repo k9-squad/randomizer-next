@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         p.icon_name,
         p.icon_url,
         p.theme_color,
-        p.tags,
+        p.category,
         p.star_count,
         p.view_count,
         p.copy_count,
@@ -67,9 +67,9 @@ export async function GET(request: Request) {
       WHERE p.is_public = true
     `;
 
-    // 按标签筛选
+    // 按分类筛选
     if (category) {
-      query = sql`${query} AND ${category} = ANY(p.tags)`;
+      query = sql`${query} AND p.category = ${category}`;
     }
 
     query = sql`${query} ORDER BY ${sql.unsafe(orderBy)} LIMIT ${limit} OFFSET ${offset}`;

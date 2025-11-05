@@ -30,10 +30,16 @@ interface CommunityProject {
   author_name?: string;
 }
 
+interface CategoryCount {
+  name: string;
+  count: number;
+}
+
 export default function ExplorePage() {
   const [hotProjects, setHotProjects] = useState<CommunityProject[]>([]);
   const [latestProjects, setLatestProjects] = useState<CommunityProject[]>([]);
   const [luckyProjects, setLuckyProjects] = useState<CommunityProject[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<CategoryCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 加载项目数据
@@ -42,10 +48,11 @@ export default function ExplorePage() {
       try {
         setLoading(true);
 
-        // 并行加载热门和最新项目
-        const [hotRes, latestRes] = await Promise.all([
+        // 并行加载热门、最新项目和分类统计
+        const [hotRes, latestRes, categoriesRes] = await Promise.all([
           fetch("/api/community/projects?sort=hot&limit=4"),
           fetch("/api/community/projects?sort=latest&limit=4"),
+          fetch("/api/community/categories"),
         ]);
 
         if (hotRes.ok) {
@@ -56,6 +63,11 @@ export default function ExplorePage() {
         if (latestRes.ok) {
           const latestData = await latestRes.json();
           setLatestProjects(latestData);
+        }
+
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setCategoryCounts(categoriesData);
         }
 
         // 手气不错：从所有项目中随机选择
@@ -152,34 +164,42 @@ export default function ExplorePage() {
       {/* Categories Section */}
       <SectionWrapper title="类别" href="/explore/categories">
         <ProjectGrid columns={3}>
-          {CATEGORIES.map((category) => (
-            <Link key={category.id} href={`/explore/category/${category.id}`}>
-              <Card
-                className="h-[80px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
-                style={{
-                  background: `linear-gradient(270deg, ${category.gradient} 0%, transparent 50%)`,
-                }}
-              >
-                <div className="absolute inset-0 flex items-center justify-between px-4">
-                  <div className="flex items-center gap-3">
-                    <category.icon
-                      className="h-8 w-8 transition-colors flex-shrink-0"
-                      strokeWidth={1.5}
-                      style={{ color: getLighterColor(category.gradient) }}
-                    />
-                    <div>
-                      <h3 className="text-base font-semibold">
-                        {category.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {category.count} 个项目
-                      </p>
+          {CATEGORIES.map((category) => {
+            // 从 API 获取真实的分类计数
+            const countData = categoryCounts.find(
+              (c) => c.name === category.name
+            );
+            const realCount = countData?.count ?? 0;
+
+            return (
+              <Link key={category.id} href={`/explore/category/${category.id}`}>
+                <Card
+                  className="h-[80px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
+                  style={{
+                    background: `linear-gradient(270deg, ${category.gradient} 0%, transparent 50%)`,
+                  }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
+                    <div className="flex items-center gap-3">
+                      <category.icon
+                        className="h-8 w-8 transition-colors flex-shrink-0"
+                        strokeWidth={1.5}
+                        style={{ color: getLighterColor(category.gradient) }}
+                      />
+                      <div>
+                        <h3 className="text-base font-semibold">
+                          {category.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {realCount} 个项目
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            );
+          })}
         </ProjectGrid>
       </SectionWrapper>
 

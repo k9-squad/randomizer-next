@@ -49,7 +49,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description, config, themeColor, iconType, iconName, tags, isPublic } = body;
+    const { name, description, config, category, themeColor, iconType, iconName, tags, isPublic } = body;
 
     // 验证输入长度
     if (name && name.length > 50) {
@@ -57,6 +57,9 @@ export async function PUT(
     }
     if (description && description.length > 200) {
       return NextResponse.json({ error: '项目描述不能超过200个字符' }, { status: 400 });
+    }
+    if (category && category.length > 20) {
+      return NextResponse.json({ error: '分类名称不能超过20个字符' }, { status: 400 });
     }
     if (tags && tags.length > 10) {
       return NextResponse.json({ error: '标签数量不能超过10个' }, { status: 400 });
@@ -74,6 +77,7 @@ export async function PUT(
         name = ${name?.slice(0, 50)},
         description = ${description?.slice(0, 200) || null},
         config = ${JSON.stringify(config)},
+        category = ${category?.slice(0, 20) || null},
         theme_color = ${themeColor || null},
         icon_type = ${iconType || null},
         icon_name = ${iconName || null},
