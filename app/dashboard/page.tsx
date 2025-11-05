@@ -270,29 +270,26 @@ export default function DashboardPage() {
                   : "hsl(220 13% 69% / 0.01)";
 
                 return (
-                  <Link
+                  <ProjectCard
                     key={fav.id}
+                    id={project.id}
+                    name={project.name}
+                    icon={icon}
+                    iconUrl={project.icon_url}
+                    gradientFrom={gradientFrom}
+                    gradientTo={gradientTo}
+                    creatorName={
+                      project.author?.name || project.type === "official"
+                        ? "官方"
+                        : "未知"
+                    }
+                    tags={project.tags || []}
                     href={
                       fav.project_type === "official"
                         ? `/app/official/${project.id}`
                         : `/app/${project.id}`
                     }
-                  >
-                    <ProjectCard
-                      id={project.id}
-                      name={project.name}
-                      icon={icon}
-                      iconUrl={project.icon_url}
-                      gradientFrom={gradientFrom}
-                      gradientTo={gradientTo}
-                      creatorName={
-                        project.author?.name || project.type === "official"
-                          ? "官方"
-                          : "未知"
-                      }
-                      tags={project.tags || []}
-                    />
-                  </Link>
+                  />
                 );
               })}
             </HorizontalScroll>
@@ -334,18 +331,17 @@ export default function DashboardPage() {
                       : "hsl(220 13% 69% / 0.01)";
 
                     return (
-                      <Link key={fav.id} href={`/app/${fav.project_id}`}>
-                        <ProjectCard
-                          id={fav.project_id}
-                          name={fav.name}
-                          icon={icon}
-                          iconUrl={iconUrl}
-                          gradientFrom={gradientFrom}
-                          gradientTo={gradientTo}
-                          creatorName={fav.author_name || "未知"}
-                          tags={fav.tags || []}
-                        />
-                      </Link>
+                      <ProjectCard
+                        key={fav.id}
+                        id={fav.project_id}
+                        name={fav.name}
+                        icon={icon}
+                        iconUrl={iconUrl}
+                        gradientFrom={gradientFrom}
+                        gradientTo={gradientTo}
+                        creatorName={fav.author_name || "未知"}
+                        tags={fav.tags || []}
+                      />
                     );
                   })}
                 </HorizontalScroll>

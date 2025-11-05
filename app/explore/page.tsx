@@ -41,6 +41,9 @@ export default function ExplorePage() {
   const [latestProjects, setLatestProjects] = useState<CommunityProject[]>([]);
   const [luckyProjects, setLuckyProjects] = useState<CommunityProject[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<CategoryCount[]>([]);
+  const [favoritesMap, setFavoritesMap] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
 
   // 加载项目数据
@@ -56,13 +59,17 @@ export default function ExplorePage() {
           fetch("/api/community/categories"),
         ]);
 
+        let hotData: CommunityProject[] = [];
+        let latestData: CommunityProject[] = [];
+        let luckyData: CommunityProject[] = [];
+
         if (hotRes.ok) {
-          const hotData = await hotRes.json();
+          hotData = await hotRes.json();
           setHotProjects(hotData);
         }
 
         if (latestRes.ok) {
-          const latestData = await latestRes.json();
+          latestData = await latestRes.json();
           setLatestProjects(latestData);
         }
 
@@ -79,7 +86,28 @@ export default function ExplorePage() {
           const allData = await allRes.json();
           // 随机打乱并选择2个
           const shuffled = allData.sort(() => Math.random() - 0.5);
-          setLuckyProjects(shuffled.slice(0, 2));
+          luckyData = shuffled.slice(0, 2);
+          setLuckyProjects(luckyData);
+        }
+
+        // 收集所有项目ID并批量查询收藏状态
+        const allProjectIds = [
+          ...hotData.map((p) => p.id),
+          ...latestData.map((p) => p.id),
+          ...luckyData.map((p) => p.id),
+        ];
+
+        if (allProjectIds.length > 0) {
+          const favRes = await fetch("/api/favorites/batch-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectIds: allProjectIds }),
+          });
+
+          if (favRes.ok) {
+            const favData = await favRes.json();
+            setFavoritesMap(favData);
+          }
         }
       } catch (error) {
         console.error("加载探索页面数据失败:", error);
@@ -129,7 +157,11 @@ export default function ExplorePage() {
         ) : (
           <HorizontalScroll className="flex gap-4 pb-4 pl-2">
             {hotProjects.map((project) => (
-              <CommunityProjectCard key={project.id} project={project} />
+              <CommunityProjectCard
+                key={project.id}
+                project={project}
+                isFavorited={favoritesMap[project.id] || false}
+              />
             ))}
           </HorizontalScroll>
         )}
@@ -152,7 +184,11 @@ export default function ExplorePage() {
         ) : (
           <HorizontalScroll className="flex gap-4 pb-4 pl-2">
             {latestProjects.map((project) => (
-              <CommunityProjectCard key={project.id} project={project} />
+              <CommunityProjectCard
+                key={project.id}
+                project={project}
+                isFavorited={favoritesMap[project.id] || false}
+              />
             ))}
           </HorizontalScroll>
         )}
@@ -238,7 +274,11 @@ export default function ExplorePage() {
         ) : (
           <ProjectGrid columns={2}>
             {luckyProjects.map((project) => (
-              <CommunityProjectCard key={project.id} project={project} />
+              <CommunityProjectCard
+                key={project.id}
+                project={project}
+                isFavorited={favoritesMap[project.id] || false}
+              />
             ))}
           </ProjectGrid>
         )}

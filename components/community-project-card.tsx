@@ -18,9 +18,13 @@ interface CommunityProjectCardProps {
     category?: string;
     author_name?: string;
   };
+  isFavorited?: boolean;
 }
 
-export function CommunityProjectCard({ project }: CommunityProjectCardProps) {
+export function CommunityProjectCard({
+  project,
+  isFavorited = false,
+}: CommunityProjectCardProps) {
   const icon =
     project.icon_type === "lucide" && project.icon_name
       ? getLucideIcon(project.icon_name)
@@ -50,13 +54,19 @@ export function CommunityProjectCard({ project }: CommunityProjectCardProps) {
         {/* 下部：文字信息区域 */}
         <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">
           {/* 标题和星标 */}
-          <div className="flex items-start justify-between mb-auto">
+          <div className="flex items-center justify-between mb-auto">
             <h3 className="text-lg font-semibold truncate flex-1">
               {project.name}
             </h3>
             <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-              <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-              <span className="text-xs text-muted-foreground">
+              <Star
+                className={`h-3.5 w-3.5 ${
+                  isFavorited
+                    ? "fill-yellow-500 text-yellow-500"
+                    : "fill-none text-yellow-500"
+                }`}
+              />
+              <span className="text-xs text-muted-foreground leading-none">
                 {project.star_count || 0}
               </span>
             </div>

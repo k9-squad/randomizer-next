@@ -84,8 +84,8 @@ export async function POST(request: Request) {
 
     // 添加收藏
     const result = await sql`
-      INSERT INTO favorites (user_id, project_id)
-      VALUES (${session.user.id}, ${projectId})
+      INSERT INTO favorites (id, user_id, project_id)
+      VALUES (gen_random_uuid()::TEXT, ${session.user.id}, ${projectId})
       RETURNING *
     `;
 

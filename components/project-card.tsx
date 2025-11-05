@@ -16,6 +16,7 @@ interface ProjectCardProps {
   creatorName: string;
   creatorAvatar?: string;
   tags: string[];
+  href?: string; // 自定义链接（可选，默认为 /app/${id}）
 }
 
 export function ProjectCard({
@@ -28,9 +29,12 @@ export function ProjectCard({
   creatorName,
   creatorAvatar,
   tags,
+  href,
 }: ProjectCardProps) {
+  const linkHref = href || `/app/${id}`;
+
   return (
-    <Link href={`/app/${id}`} className="flex-shrink-0 block" key={id}>
+    <Link href={linkHref} className="flex-shrink-0 block" key={id}>
       <Card
         className="w-full min-w-[280px] h-[240px] transition-all duration-300 cursor-pointer overflow-hidden relative group border border-border/50 hover:border-primary/50 hover:scale-[1.02]"
         style={{
