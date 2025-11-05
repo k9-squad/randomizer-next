@@ -26,6 +26,7 @@ import { LotteryConfig, GroupingConfig, Group } from "@/types/project";
 import { distributeMembers } from "@/lib/grouping";
 import { AppPageSkeleton } from "@/components/skeletons";
 import { saveProject, type StoredProject } from "@/lib/storage";
+import { toast } from "sonner";
 
 // ============ 抽奖模式相关 ============
 
@@ -253,7 +254,7 @@ export default function CommunityProjectPage({
     }
 
     if (!projectData) {
-      alert("项目数据加载中，请稍后再试");
+      toast.error("项目数据加载中，请稍后再试");
       return;
     }
 
@@ -277,6 +278,7 @@ export default function CommunityProjectPage({
         }
 
         const newProject = await response.json();
+        toast.success("复制成功");
         router.push(`/app/${newProject.id}`);
       } else {
         // 游客：保存到本地存储
@@ -300,11 +302,12 @@ export default function CommunityProjectPage({
         };
 
         await saveProject(newProject);
+        toast.success("复制成功");
         router.push(`/app/${newId}`);
       }
     } catch (error) {
       console.error("复制项目失败:", error);
-      alert("复制失败，请重试");
+      toast.error("复制失败，请重试");
     } finally {
       setIsCopying(false);
     }
@@ -334,15 +337,16 @@ export default function CommunityProjectPage({
       }
 
       setIsFavorited(!isFavorited);
+      toast.success(isFavorited ? "已取消收藏" : "收藏成功");
     } catch (error) {
       console.error("收藏操作失败:", error);
-      alert(isFavorited ? "取消收藏失败，请重试" : "收藏失败，请重试");
+      toast.error(isFavorited ? "取消收藏失败，请重试" : "收藏失败，请重试");
     }
   };
 
   // 举报（暂不实现）
   const handleReport = () => {
-    alert("举报功能即将推出");
+    toast.info("举报功能即将推出");
   };
 
   const startSpinning = (rotatorId: string) => {

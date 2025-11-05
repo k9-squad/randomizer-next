@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { LotteryConfig, GroupingConfig, Group } from "@/types/project";
 import { distributeMembers } from "@/lib/grouping";
 import { saveProject, type StoredProject } from "@/lib/storage";
+import { toast } from "sonner";
 
 // ============ 抽奖模式相关 ============
 
@@ -228,7 +229,7 @@ export default function OfficialTemplatePage({
     }
 
     if (!templateData) {
-      alert("模板数据加载中，请稍后再试");
+      toast.error("模板数据加载中，请稍后再试");
       return;
     }
 
@@ -252,6 +253,7 @@ export default function OfficialTemplatePage({
         }
 
         const newProject = await response.json();
+        toast.success("复制成功");
         router.push(`/app/${newProject.id}`);
       } else {
         // 游客：保存到本地存储
@@ -275,11 +277,12 @@ export default function OfficialTemplatePage({
         };
 
         await saveProject(newProject);
+        toast.success("复制成功");
         router.push(`/app/${newId}`);
       }
     } catch (error) {
       console.error("复制项目失败:", error);
-      alert("复制失败，请重试");
+      toast.error("复制失败，请重试");
     } finally {
       setIsCopying(false);
     }

@@ -13,6 +13,7 @@ import { UserPlus, X, Mail, Lock, UserCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,13 +58,16 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         setError(data.error || "注册失败");
+        toast.error(data.error || "注册失败");
         return;
       }
 
       // 注册成功，跳转到登录页
+      toast.success("注册成功！验证邮件已发送到您的邮箱");
       router.push("/login?registered=true");
     } catch (error) {
       setError("注册失败，请稍后重试");
+      toast.error("注册失败，请稍后重试");
     } finally {
       setIsLoading(false);
     }

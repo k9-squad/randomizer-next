@@ -27,6 +27,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     // TODO: 实现更新用户信息的API调用
-    alert("个人信息已保存！");
+    toast.success("个人信息已保存！");
   };
 
   const isGuest = userType === "guest";

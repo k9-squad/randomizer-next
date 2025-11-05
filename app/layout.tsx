@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header, BottomNav } from "@/components/layout";
 import { Providers } from "@/components/providers";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
               <main className="flex-1 pb-14 md:pb-0">{children}</main>
               <BottomNav />
             </div>
+            <Toaster />
           </ThemeProvider>
         </Providers>
       </body>

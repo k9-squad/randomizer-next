@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -363,7 +364,7 @@ export default function ProjectSettingsPage({
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
       if (tags.length >= 3) {
-        alert("最多只能添加3个标签");
+        toast.warning("最多只能添加3个标签");
         return;
       }
       setTags([...tags, trimmed]);
@@ -405,7 +406,7 @@ export default function ProjectSettingsPage({
 
   const handleSave = async () => {
     if (!projectName.trim()) {
-      alert("请输入项目名称");
+      toast.warning("请输入项目名称");
       return;
     }
 
@@ -440,7 +441,7 @@ export default function ProjectSettingsPage({
         }
 
         if (rotators.length > poolSize) {
-          alert(
+          toast.warning(
             `不放回模式下，轮换位数量（${rotators.length}）不能超过池子大小（${poolSize}）`
           );
           return;
@@ -467,7 +468,7 @@ export default function ProjectSettingsPage({
       // 验证配置
       const validation = validateGroupingConfig(memberList, groups.length);
       if (!validation.valid) {
-        alert(validation.error);
+        toast.warning(validation.error);
         return;
       }
 
@@ -502,6 +503,7 @@ export default function ProjectSettingsPage({
       isPublished,
     });
 
+    toast.success("保存成功");
     setHasUnsavedChanges(false);
     router.back();
   };
@@ -527,8 +529,11 @@ export default function ProjectSettingsPage({
   const handleDelete = async () => {
     const success = await deleteProject(id);
     if (success) {
+      toast.success("删除成功");
       setHasUnsavedChanges(false);
       router.push("/dashboard/my-projects");
+    } else {
+      toast.error("删除失败");
     }
   };
 

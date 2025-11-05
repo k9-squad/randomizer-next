@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,14 +45,17 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError("邮箱或密码错误");
+        toast.error("邮箱或密码错误");
       } else {
         // 设置用户状态
         localStorage.setItem("userType", "user");
+        toast.success("登录成功");
         router.push("/dashboard");
         router.refresh();
       }
     } catch (error) {
       setError("登录失败，请稍后重试");
+      toast.error("登录失败，请稍后重试");
     } finally {
       setIsLoading(false);
     }
