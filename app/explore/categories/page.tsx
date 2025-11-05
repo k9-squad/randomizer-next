@@ -293,7 +293,7 @@ export default function CategoriesPage() {
         {categories.map((category, i) => (
           <div key={i} className="flex flex-col gap-4">
             {/* Category Header Card */}
-            <Link href={`/community/category/${i}`}>
+            <Link href={`/explore/category/${i}`}>
               <Card
                 className="h-[100px] hover:border-primary/50 hover:scale-[1.01] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
                 style={{

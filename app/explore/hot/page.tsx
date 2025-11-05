@@ -1,13 +1,51 @@
 "use client";
 
-import { ProjectCard } from "@/components/project-card";
+import { useState, useEffect } from "react";
+import { Flame } from "lucide-react";
+import { CommunityProjectCard } from "@/components/community-project-card";
 import { PageContainer } from "@/components/page-container";
 import { BackHeader } from "@/components/back-header";
 import { ProjectGrid } from "@/components/project-grid";
-import { getHotProjects } from "@/lib/mock-data";
+import {
+  Empty,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+
+interface CommunityProject {
+  id: string;
+  name: string;
+  icon_type?: string;
+  icon_name?: string;
+  theme_color?: string;
+  star_count?: number;
+  tags?: string[];
+  author_name?: string;
+}
 
 export default function HotProjectsPage() {
-  const hotProjects = getHotProjects(12);
+  const [hotProjects, setHotProjects] = useState<CommunityProject[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadHotProjects = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/community/projects?sort=hot&limit=20");
+        if (res.ok) {
+          const data = await res.json();
+          setHotProjects(data);
+        }
+      } catch (error) {
+        console.error("加载热门项目失败:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHotProjects();
+  }, []);
 
   return (
     <PageContainer>
@@ -16,20 +54,27 @@ export default function HotProjectsPage() {
         description="最受欢迎的随机器项目，按热度排序"
       />
 
-      <ProjectGrid columns={4}>
-        {hotProjects.map((project) => (
-          <ProjectCard
-            key={project.id}
-            id={project.id}
-            name={project.name}
-            icon={project.icon}
-            gradientFrom={project.gradient}
-            gradientTo={project.gradient.replace("0.15", "0.01")}
-            creatorName={project.creator}
-            tags={project.tags}
-          />
-        ))}
-      </ProjectGrid>
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-lg">加载中...</p>
+        </div>
+      ) : hotProjects.length === 0 ? (
+        <Empty>
+          <EmptyIcon>
+            <Flame className="h-16 w-16" />
+          </EmptyIcon>
+          <EmptyTitle>暂无热门项目</EmptyTitle>
+          <EmptyDescription>
+            目前还没有公开的项目，快去创建并发布第一个项目吧！
+          </EmptyDescription>
+        </Empty>
+      ) : (
+        <ProjectGrid columns={4}>
+          {hotProjects.map((project) => (
+            <CommunityProjectCard key={project.id} project={project} />
+          ))}
+        </ProjectGrid>
+      )}
     </PageContainer>
   );
 }

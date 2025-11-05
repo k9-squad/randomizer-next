@@ -2,33 +2,94 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Compass } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
-import { ProjectCard } from "@/components/project-card";
+import { CommunityProjectCard } from "@/components/community-project-card";
 import { getLighterColor } from "@/lib/color-utils";
 import { PageContainer } from "@/components/page-container";
 import { SectionWrapper } from "@/components/section-wrapper";
 import { ProjectGrid } from "@/components/project-grid";
 import {
-  getHotProjects,
-  getLatestProjects,
-  getRandomProjects,
-  CATEGORIES,
-} from "@/lib/mock-data";
+  Empty,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { CATEGORIES } from "@/lib/mock-data";
 
-export default function CommunityPage() {
-  const [luckyProjects, setLuckyProjects] = useState(() =>
-    getRandomProjects(2)
-  );
+interface CommunityProject {
+  id: string;
+  name: string;
+  icon_type?: string;
+  icon_name?: string;
+  theme_color?: string;
+  star_count?: number;
+  tags?: string[];
+  author_name?: string;
+}
 
-  const refreshLuckyProjects = () => {
-    setLuckyProjects(getRandomProjects(2));
+export default function ExplorePage() {
+  const [hotProjects, setHotProjects] = useState<CommunityProject[]>([]);
+  const [latestProjects, setLatestProjects] = useState<CommunityProject[]>([]);
+  const [luckyProjects, setLuckyProjects] = useState<CommunityProject[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 加载项目数据
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+
+        // 并行加载热门和最新项目
+        const [hotRes, latestRes] = await Promise.all([
+          fetch("/api/community/projects?sort=hot&limit=4"),
+          fetch("/api/community/projects?sort=latest&limit=4"),
+        ]);
+
+        if (hotRes.ok) {
+          const hotData = await hotRes.json();
+          setHotProjects(hotData);
+        }
+
+        if (latestRes.ok) {
+          const latestData = await latestRes.json();
+          setLatestProjects(latestData);
+        }
+
+        // 手气不错：从所有项目中随机选择
+        const allRes = await fetch(
+          "/api/community/projects?sort=latest&limit=20"
+        );
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          // 随机打乱并选择2个
+          const shuffled = allData.sort(() => Math.random() - 0.5);
+          setLuckyProjects(shuffled.slice(0, 2));
+        }
+      } catch (error) {
+        console.error("加载探索页面数据失败:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
+
+  const refreshLuckyProjects = async () => {
+    try {
+      const res = await fetch("/api/community/projects?sort=latest&limit=20");
+      if (res.ok) {
+        const data = await res.json();
+        const shuffled = data.sort(() => Math.random() - 0.5);
+        setLuckyProjects(shuffled.slice(0, 2));
+      }
+    } catch (error) {
+      console.error("刷新手气不错失败:", error);
+    }
   };
-
-  const hotProjects = getHotProjects(4);
-  const latestProjects = getLatestProjects(4);
 
   return (
     <PageContainer>
@@ -39,46 +100,60 @@ export default function CommunityPage() {
       </div>
 
       {/* Hot Projects Section */}
-      <SectionWrapper title="热门项目" href="/community/hot">
-        <HorizontalScroll className="flex gap-4 pb-4 pl-2">
-          {hotProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              id={project.id}
-              name={project.name}
-              icon={project.icon}
-              gradientFrom={project.gradient}
-              gradientTo={project.gradient.replace("0.15", "0.01")}
-              creatorName={project.creator}
-              tags={project.tags}
-            />
-          ))}
-        </HorizontalScroll>
+      <SectionWrapper title="热门项目" href="/explore/hot">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            加载中...
+          </div>
+        ) : hotProjects.length === 0 ? (
+          <Empty>
+            <EmptyIcon>
+              <Compass className="h-12 w-12" />
+            </EmptyIcon>
+            <EmptyTitle>暂无热门项目</EmptyTitle>
+            <EmptyDescription>
+              目前还没有公开的项目，快去创建并发布第一个项目吧！
+            </EmptyDescription>
+          </Empty>
+        ) : (
+          <HorizontalScroll className="flex gap-4 pb-4 pl-2">
+            {hotProjects.map((project) => (
+              <CommunityProjectCard key={project.id} project={project} />
+            ))}
+          </HorizontalScroll>
+        )}
       </SectionWrapper>
 
       {/* Latest Projects Section */}
-      <SectionWrapper title="最新上传" href="/community/latest">
-        <HorizontalScroll className="flex gap-4 pb-4 pl-2">
-          {latestProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              id={project.id}
-              name={project.name}
-              icon={project.icon}
-              gradientFrom={project.gradient}
-              gradientTo={project.gradient.replace("0.15", "0.01")}
-              creatorName={project.creator}
-              tags={project.tags}
-            />
-          ))}
-        </HorizontalScroll>
+      <SectionWrapper title="最新上传" href="/explore/latest">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            加载中...
+          </div>
+        ) : latestProjects.length === 0 ? (
+          <Empty>
+            <EmptyIcon>
+              <Compass className="h-12 w-12" />
+            </EmptyIcon>
+            <EmptyTitle>暂无最新项目</EmptyTitle>
+            <EmptyDescription>
+              目前还没有公开的项目，快去创建并发布第一个项目吧！
+            </EmptyDescription>
+          </Empty>
+        ) : (
+          <HorizontalScroll className="flex gap-4 pb-4 pl-2">
+            {latestProjects.map((project) => (
+              <CommunityProjectCard key={project.id} project={project} />
+            ))}
+          </HorizontalScroll>
+        )}
       </SectionWrapper>
 
       {/* Categories Section */}
-      <SectionWrapper title="类别" href="/community/categories">
+      <SectionWrapper title="类别" href="/explore/categories">
         <ProjectGrid columns={3}>
           {CATEGORIES.map((category) => (
-            <Link key={category.id} href={`/community/category/${category.id}`}>
+            <Link key={category.id} href={`/explore/category/${category.id}`}>
               <Card
                 className="h-[80px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer border border-border/50 relative overflow-hidden group"
                 style={{
@@ -117,49 +192,34 @@ export default function CommunityPage() {
             size="sm"
             onClick={refreshLuckyProjects}
             className="gap-2"
+            disabled={loading || luckyProjects.length === 0}
           >
             <RefreshCw className="h-4 w-4" />
             换一批
           </Button>
         }
       >
-        <ProjectGrid columns={2}>
-          {luckyProjects.map((project) => (
-            <Link key={project.id} href={`/app/${project.id}`}>
-              <Card
-                className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
-                style={{
-                  background: `linear-gradient(180deg, ${project.gradient} 0%, transparent 100%)`,
-                }}
-              >
-                <div className="absolute top-0 left-0 right-0 h-[150px] flex items-center justify-center">
-                  <project.icon
-                    className="h-20 w-20 group-hover:scale-110 transition-all duration-300"
-                    strokeWidth={1.5}
-                    style={{ color: getLighterColor(project.gradient) }}
-                  />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 h-[90px] p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 flex flex-col">
-                  <h3 className="text-lg font-semibold mb-auto truncate">
-                    {project.name}
-                  </h3>
-                  <div className="flex items-end justify-between gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {project.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-0.5 bg-secondary/80 rounded text-xs font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </ProjectGrid>
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            加载中...
+          </div>
+        ) : luckyProjects.length === 0 ? (
+          <Empty>
+            <EmptyIcon>
+              <Compass className="h-12 w-12" />
+            </EmptyIcon>
+            <EmptyTitle>暂无项目</EmptyTitle>
+            <EmptyDescription>
+              目前还没有公开的项目，快去创建并发布第一个项目吧！
+            </EmptyDescription>
+          </Empty>
+        ) : (
+          <ProjectGrid columns={2}>
+            {luckyProjects.map((project) => (
+              <CommunityProjectCard key={project.id} project={project} />
+            ))}
+          </ProjectGrid>
+        )}
       </SectionWrapper>
     </PageContainer>
   );

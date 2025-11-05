@@ -97,7 +97,7 @@ export default function FavoritesPage() {
               在社区中发现喜欢的项目，点击收藏星标即可添加到这里
             </p>
             <Link
-              href="/community"
+              href="/explore"
               className="text-primary underline underline-offset-4 hover:no-underline"
             >
               探索社区项目

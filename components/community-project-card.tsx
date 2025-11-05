@@ -29,9 +29,9 @@ export function CommunityProjectCard({ project }: CommunityProjectCardProps) {
   const gradientFrom = getGradientFrom(project.theme_color);
 
   return (
-    <Link href={`/app/${project.id}`}>
+    <Link href={`/app/${project.id}`} className="flex-shrink-0 block">
       <Card
-        className="h-[240px] hover:border-primary/50 hover:scale-[1.02] transition-all cursor-pointer overflow-hidden relative group border border-border/50"
+        className="w-full min-w-[280px] h-[240px] transition-all duration-300 cursor-pointer overflow-hidden relative group border border-border/50 hover:border-primary/50 hover:scale-[1.02]"
         style={{
           background: `linear-gradient(180deg, ${gradientFrom} 0%, transparent 100%)`,
         }}

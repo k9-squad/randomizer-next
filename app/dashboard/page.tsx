@@ -421,7 +421,7 @@ export default function DashboardPage() {
 
         {/* Community Popular Section */}
         <div className="flex flex-col gap-4">
-          <Link href="/community" className="group w-fit">
+          <Link href="/explore" className="group w-fit">
             <div className="flex items-center gap-2 cursor-pointer">
               <h2 className="text-2xl font-semibold group-hover:text-primary transition-colors">
                 社区热门
