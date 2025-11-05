@@ -51,6 +51,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, config, themeColor, iconType, iconName, tags, userId, description } = body;
 
+    // 验证输入长度
+    if (name && name.length > 50) {
+      return NextResponse.json({ error: '项目名称不能超过50个字符' }, { status: 400 });
+    }
+    if (description && description.length > 200) {
+      return NextResponse.json({ error: '项目描述不能超过200个字符' }, { status: 400 });
+    }
+    if (tags && tags.length > 10) {
+      return NextResponse.json({ error: '标签数量不能超过10个' }, { status: 400 });
+    }
+    if (tags && tags.some((tag: string) => tag.length > 20)) {
+      return NextResponse.json({ error: '单个标签不能超过20个字符' }, { status: 400 });
+    }
+
     // 生成唯一 ID
     const id = crypto.randomUUID();
     
@@ -60,9 +74,9 @@ export async function POST(request: Request) {
         tags, user_id, is_public
       )
       VALUES (
-        ${id}, ${name}, ${description || null}, ${JSON.stringify(config)}, 
+        ${id}, ${name?.slice(0, 50)}, ${description?.slice(0, 200) || null}, ${JSON.stringify(config)}, 
         ${themeColor || null}, ${iconType || null}, ${iconName || null}, 
-        ${tags || []}, ${userId}, false
+        ${tags?.slice(0, 10).map((t: string) => t.slice(0, 20)) || []}, ${userId}, false
       )
       RETURNING *
     `;

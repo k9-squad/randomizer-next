@@ -38,6 +38,15 @@ import type {
   GroupingConfig,
 } from "@/types/project";
 import { validateGroupingConfig } from "@/lib/grouping";
+import { INPUT_LIMITS } from "@/lib/constants";
+
+// 限制每行长度的辅助函数
+function limitTextareaLines(text: string, maxLineLength: number): string {
+  return text
+    .split("\n")
+    .map((line) => line.slice(0, maxLineLength))
+    .join("\n");
+}
 
 export default function ProjectSettingsPage({
   params,
@@ -577,21 +586,31 @@ export default function ProjectSettingsPage({
           <h2 className="text-xl font-semibold">基本信息</h2>
           <div className="flex flex-col gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">项目名称</label>
+              <label className="text-sm font-medium mb-2 block">
+                项目名称
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({projectName.length}/50)
+                </span>
+              </label>
               <Input
                 placeholder="例如：中午吃什么"
                 value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                onChange={(e) => setProjectName(e.target.value.slice(0, 50))}
+                maxLength={50}
               />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">
                 位置描述文字（可选）
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({locationText.length}/100)
+                </span>
               </label>
               <Input
                 placeholder="例如：今天的午餐是"
                 value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
+                onChange={(e) => setLocationText(e.target.value.slice(0, 100))}
+                maxLength={100}
               />
             </div>
 
@@ -618,15 +637,19 @@ export default function ProjectSettingsPage({
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   标签（可选，最多3个）
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({tagInput.length}/20)
+                  </span>
                 </label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="输入标签后按回车添加"
                     value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
+                    onChange={(e) => setTagInput(e.target.value.slice(0, 20))}
                     onKeyDown={handleTagInputKeyDown}
                     className="flex-1"
                     disabled={tags.length >= 3}
+                    maxLength={20}
                   />
                   <Button
                     type="button"
@@ -802,13 +825,15 @@ export default function ProjectSettingsPage({
               <Card className="p-6 flex flex-col gap-4">
                 <h2 className="text-xl font-semibold">共享池内容</h2>
                 <p className="text-sm text-muted-foreground">
-                  每行一个选项，所有轮换位将从这些选项中随机选择
+                  每行一个选项（最多100字符/行），所有轮换位将从这些选项中随机选择
                 </p>
                 <textarea
                   className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y"
                   placeholder={"黄焖鸡米饭\n沙县小吃\n兰州拉面\n麦当劳\n肯德基"}
                   value={sharedPool}
-                  onChange={(e) => setSharedPool(e.target.value)}
+                  onChange={(e) =>
+                    setSharedPool(limitTextareaLines(e.target.value, 100))
+                  }
                 />
                 <p className="text-xs text-muted-foreground">
                   当前选项数：
@@ -833,17 +858,27 @@ export default function ProjectSettingsPage({
                         <GripVertical className="h-5 w-5" />
                       </div>
                       <div className="flex-1 flex flex-col gap-3">
-                        <Input
-                          placeholder="轮换位标签"
-                          value={rotator.label}
-                          onChange={(e) =>
-                            updateRotator(rotator.id, "label", e.target.value)
-                          }
-                        />
+                        <div>
+                          <Input
+                            placeholder="轮换位标签"
+                            value={rotator.label}
+                            onChange={(e) =>
+                              updateRotator(
+                                rotator.id,
+                                "label",
+                                e.target.value.slice(0, 30)
+                              )
+                            }
+                            maxLength={30}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {rotator.label.length}/30
+                          </p>
+                        </div>
                         {!isSharedPool && (
                           <div>
                             <p className="text-sm text-muted-foreground mb-2">
-                              该轮换位的独立池（每行一个选项）
+                              该轮换位的独立池（每行一个选项，最多100字符/行）
                             </p>
                             <textarea
                               className="w-full min-h-[120px] p-3 rounded-md border border-input bg-background text-sm resize-y"
@@ -853,7 +888,7 @@ export default function ProjectSettingsPage({
                                 updateRotator(
                                   rotator.id,
                                   "individualPool",
-                                  e.target.value
+                                  limitTextareaLines(e.target.value, 100)
                                 )
                               }
                             />
@@ -900,13 +935,15 @@ export default function ProjectSettingsPage({
             <Card className="p-6 flex flex-col gap-4">
               <h2 className="text-xl font-semibold">成员列表</h2>
               <p className="text-sm text-muted-foreground">
-                每行一个成员名称，这些成员将被随机分配到各个组中
+                每行一个成员名称（最多50字符/行），这些成员将被随机分配到各个组中
               </p>
               <textarea
                 className="w-full min-h-[200px] p-3 rounded-md border border-input bg-background text-sm resize-y font-mono"
                 placeholder={"张三\n李四\n王五\n赵六\n钱七\n孙八"}
                 value={members}
-                onChange={(e) => setMembers(e.target.value)}
+                onChange={(e) =>
+                  setMembers(limitTextareaLines(e.target.value, 50))
+                }
               />
               <p className="text-xs text-muted-foreground">
                 当前成员数：{members.split("\n").filter((m) => m.trim()).length}
@@ -928,9 +965,13 @@ export default function ProjectSettingsPage({
                           placeholder={`第 ${index + 1} 组`}
                           value={group.name}
                           onChange={(e) =>
-                            updateGroup(group.id, e.target.value)
+                            updateGroup(group.id, e.target.value.slice(0, 30))
                           }
+                          maxLength={30}
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {group.name.length}/30
+                        </p>
                       </div>
                       {groups.length > 1 && (
                         <Button

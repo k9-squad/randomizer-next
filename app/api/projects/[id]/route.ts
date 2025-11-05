@@ -51,16 +51,30 @@ export async function PUT(
     const body = await request.json();
     const { name, description, config, themeColor, iconType, iconName, tags, isPublic } = body;
 
+    // 验证输入长度
+    if (name && name.length > 50) {
+      return NextResponse.json({ error: '项目名称不能超过50个字符' }, { status: 400 });
+    }
+    if (description && description.length > 200) {
+      return NextResponse.json({ error: '项目描述不能超过200个字符' }, { status: 400 });
+    }
+    if (tags && tags.length > 10) {
+      return NextResponse.json({ error: '标签数量不能超过10个' }, { status: 400 });
+    }
+    if (tags && tags.some((tag: string) => tag.length > 20)) {
+      return NextResponse.json({ error: '单个标签不能超过20个字符' }, { status: 400 });
+    }
+
     const result = await sql`
       UPDATE projects
       SET 
-        name = ${name},
-        description = ${description || null},
+        name = ${name?.slice(0, 50)},
+        description = ${description?.slice(0, 200) || null},
         config = ${JSON.stringify(config)},
         theme_color = ${themeColor || null},
         icon_type = ${iconType || null},
         icon_name = ${iconName || null},
-        tags = ${tags || []},
+        tags = ${tags?.slice(0, 10).map((t: string) => t.slice(0, 20)) || []},
         is_public = ${isPublic !== undefined ? isPublic : false},
         updated_at = NOW()
       WHERE id = ${id}

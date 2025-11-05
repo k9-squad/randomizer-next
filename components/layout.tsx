@@ -2,21 +2,44 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Home, Users, PlusCircle, User, Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Home,
+  Users,
+  PlusCircle,
+  User,
+  Search,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 export function Header() {
   const pathname = usePathname();
-  const [userType, setUserType] = useState<string | null>(null);
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [searchValue, setSearchValue] = useState("");
 
-  useEffect(() => {
-    setUserType(localStorage.getItem("userType"));
-  }, []);
+  const handleLogout = async () => {
+    localStorage.removeItem("userType");
+    localStorage.removeItem("userName");
+    await signOut({ redirect: false });
+    router.push("/dashboard");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/98 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80">
@@ -95,13 +118,71 @@ export function Header() {
           <div className="hidden md:block">
             <ModeToggle />
           </div>
-          {userType ? (
-            <Link href="/profile">
-              <Button variant="ghost" size="sm">
-                <User className="h-4 w-4" />
-                <span className="ml-1.5 hidden lg:inline-block">个人</span>
-              </Button>
-            </Link>
+
+          {status === "loading" ? (
+            <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+          ) : session?.user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={session.user.image || ""}
+                      alt={session.user.name || ""}
+                    />
+                    <AvatarFallback>
+                      {session.user.name?.charAt(0).toUpperCase() ||
+                        session.user.email?.charAt(0).toUpperCase() ||
+                        "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {session.user.name || "用户"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session.user.email}
+                    </p>
+                    {session.user.uid && (
+                      <p className="text-xs leading-none text-muted-foreground font-mono">
+                        UID: {session.user.uid}
+                      </p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    个人中心
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/my-projects"
+                    className="cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    我的项目
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  退出登录
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link href="/login">
               <Button size="sm">登录</Button>

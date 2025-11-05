@@ -1,8 +1,9 @@
 import { Project, ProjectConfig, LotteryConfig } from "@/types/project";
 
+import { getSession } from "next-auth/react";
+
 const STORAGE_KEY = "randomizer_projects";
 const USER_TYPE_KEY = "user_type"; // 'guest' | 'user'
-const USER_ID_KEY = "user_id";
 
 export interface StoredProject {
   id: string;
@@ -84,16 +85,17 @@ function migrateProject(legacy: LegacyStoredProject): StoredProject {
 }
 
 // 判断是否使用云端存储
-function shouldUseCloud(): boolean {
+async function shouldUseCloud(): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const userType = localStorage.getItem(USER_TYPE_KEY);
-  return userType === "user";
+  const session = await getSession();
+  return !!session?.user;
 }
 
 // 获取当前用户ID
-function getCurrentUserId(): string | null {
+async function getCurrentUserId(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(USER_ID_KEY);
+  const session = await getSession();
+  return session?.user?.id || null;
 }
 
 // ============ 本地存储函数（游客模式） ============
@@ -170,7 +172,7 @@ function deleteProjectFromLocal(id: string): boolean {
 // ============ 云端存储函数（登录用户） ============
 
 async function getAllProjectsFromCloud(): Promise<StoredProject[]> {
-  const userId = getCurrentUserId();
+  const userId = await getCurrentUserId();
   if (!userId) return [];
 
   try {
@@ -227,7 +229,7 @@ async function getProjectFromCloud(id: string): Promise<StoredProject | null> {
 }
 
 async function saveProjectToCloud(project: Omit<StoredProject, "createdAt" | "updatedAt">): Promise<StoredProject> {
-  const userId = getCurrentUserId();
+  const userId = await getCurrentUserId();
   if (!userId) throw new Error('User not logged in');
 
   const body = {
@@ -303,7 +305,7 @@ async function deleteProjectFromCloud(id: string): Promise<boolean> {
 
 // Get all projects
 export async function getAllProjects(): Promise<StoredProject[]> {
-  if (shouldUseCloud()) {
+  if (await shouldUseCloud()) {
     return await getAllProjectsFromCloud();
   } else {
     return getAllProjectsFromLocal();
@@ -312,7 +314,7 @@ export async function getAllProjects(): Promise<StoredProject[]> {
 
 // Get project by ID
 export async function getProject(id: string): Promise<StoredProject | null> {
-  if (shouldUseCloud()) {
+  if (await shouldUseCloud()) {
     return await getProjectFromCloud(id);
   } else {
     return getProjectFromLocal(id);
@@ -321,7 +323,7 @@ export async function getProject(id: string): Promise<StoredProject | null> {
 
 // Save or update project
 export async function saveProject(project: Omit<StoredProject, "createdAt" | "updatedAt">): Promise<StoredProject> {
-  if (shouldUseCloud()) {
+  if (await shouldUseCloud()) {
     return await saveProjectToCloud(project);
   } else {
     return saveProjectToLocal(project);
@@ -330,7 +332,7 @@ export async function saveProject(project: Omit<StoredProject, "createdAt" | "up
 
 // Delete project
 export async function deleteProject(id: string): Promise<boolean> {
-  if (shouldUseCloud()) {
+  if (await shouldUseCloud()) {
     return await deleteProjectFromCloud(id);
   } else {
     return deleteProjectFromLocal(id);
@@ -344,27 +346,22 @@ export function clearAllProjects(): void {
 
 // ============ 用户管理函数 ============
 
-// 设置用户类型（游客/登录用户）
-export function setUserType(type: 'guest' | 'user', userId?: string): void {
+// 设置用户类型（游客/登录用户）- 保持向后兼容
+export function setUserType(type: 'guest' | 'user'): void {
   if (typeof window === "undefined") return;
-  
   localStorage.setItem(USER_TYPE_KEY, type);
-  if (type === 'user' && userId) {
-    localStorage.setItem(USER_ID_KEY, userId);
-  } else if (type === 'guest') {
-    localStorage.removeItem(USER_ID_KEY);
-  }
 }
 
-// 获取用户类型
-export function getUserType(): 'guest' | 'user' {
+// 获取用户类型 - 现在从session获取
+export async function getUserType(): Promise<'guest' | 'user'> {
   if (typeof window === "undefined") return 'guest';
-  return (localStorage.getItem(USER_TYPE_KEY) as 'guest' | 'user') || 'guest';
+  const session = await getSession();
+  return session?.user ? 'user' : 'guest';
 }
 
-// 获取用户ID
-export function getUserId(): string | null {
-  return getCurrentUserId();
+// 获取用户ID - 从session获取
+export async function getUserId(): Promise<string | null> {
+  return await getCurrentUserId();
 }
 
 // 迁移本地数据到云端（登录后使用）

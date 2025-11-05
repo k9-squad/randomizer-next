@@ -14,9 +14,7 @@ import { StoredProject } from "@/lib/storage";
 
 export default function TestStoragePage() {
   const [results, setResults] = useState<string>("点击按钮开始测试...");
-  const [userType, setUserTypeState] = useState<string>(
-    getUserType() || "guest"
-  );
+  const [userType, setUserTypeState] = useState<string>("guest");
 
   const log = (message: string) => {
     setResults((prev) => prev + "\n" + message);
@@ -63,7 +61,8 @@ export default function TestStoragePage() {
   const testUserMode = async () => {
     clearLog();
     log("=== 测试登录模式 ===");
-    setUserType("user", "test-user-123");
+    log("⚠️ 需要真实登录才能测试用户模式");
+    setUserType("user");
     setUserTypeState("user");
 
     const testProject: Omit<StoredProject, "createdAt" | "updatedAt"> = {
@@ -149,7 +148,8 @@ export default function TestStoragePage() {
       log("2. 创建游客项目");
 
       // 切换到登录模式并迁移
-      setUserType("user", "test-user-123");
+      log("⚠️ 需要真实登录才能测试迁移功能");
+      setUserType("user");
       setUserTypeState("user");
       log("3. 切换到登录模式");
 
