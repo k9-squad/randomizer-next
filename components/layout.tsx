@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Home,
-  Users,
+  Compass,
   PlusCircle,
   User,
   Search,
@@ -81,13 +81,13 @@ export function Header() {
                 主页
               </Button>
             </Link>
-            <Link href="/community">
+            <Link href="/explore">
               <Button
-                variant={pathname === "/community" ? "secondary" : "ghost"}
+                variant={pathname?.startsWith("/explore") ? "secondary" : "ghost"}
                 size="sm"
               >
-                <Users className="mr-1.5 h-4 w-4" />
-                社区
+                <Compass className="mr-1.5 h-4 w-4" />
+                探索
               </Button>
             </Link>
             <Link href="/new">
@@ -211,13 +211,13 @@ export function BottomNav() {
           <Home className="h-6 w-6" />
         </Link>
         <Link
-          href="/community"
+          href="/explore"
           className={cn(
             "flex items-center justify-center flex-1 py-2",
-            pathname === "/community" ? "text-primary" : "text-muted-foreground"
+            pathname?.startsWith("/explore") ? "text-primary" : "text-muted-foreground"
           )}
         >
-          <Users className="h-6 w-6" />
+          <Compass className="h-6 w-6" />
         </Link>
         <Link
           href="/new"
