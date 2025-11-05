@@ -65,6 +65,9 @@ export async function PUT(
       return NextResponse.json({ error: '单个标签不能超过20个字符' }, { status: 400 });
     }
 
+    // 如果从未发布转为发布，设置 published_at
+    const publishedAtUpdate = isPublic ? sql`, published_at = COALESCE(published_at, NOW())` : sql``;
+
     const result = await sql`
       UPDATE projects
       SET 
@@ -75,7 +78,8 @@ export async function PUT(
         icon_type = ${iconType || null},
         icon_name = ${iconName || null},
         tags = ${tags?.slice(0, 10).map((t: string) => t.slice(0, 20)) || []},
-        is_public = ${isPublic !== undefined ? isPublic : false},
+        is_public = ${isPublic !== undefined ? isPublic : false}
+        ${publishedAtUpdate},
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
