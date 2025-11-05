@@ -25,6 +25,7 @@ import {
 import { LotteryConfig, GroupingConfig, Group } from "@/types/project";
 import { distributeMembers } from "@/lib/grouping";
 import { AppPageSkeleton } from "@/components/skeletons";
+import { saveProject, type StoredProject } from "@/lib/storage";
 
 // ============ 抽奖模式相关 ============
 
@@ -54,6 +55,7 @@ export default function CommunityProjectPage({
 
   // 通用状态
   const [loading, setLoading] = useState(true);
+  const [projectData, setProjectData] = useState<any>(null);
   const [projectName, setProjectName] = useState("社区项目");
   const [locationText, setLocationText] = useState("");
   const [speed, setSpeed] = useState(30);
@@ -175,6 +177,7 @@ export default function CommunityProjectPage({
         const project = await response.json();
         const config = project.config;
 
+        setProjectData(project); // 保存完整项目数据用于复制
         setProjectName(project.name);
         setLocationText(config.locationText || "");
         setSpeed(Math.max(15, Math.min(60, config.speed)));
@@ -237,30 +240,68 @@ export default function CommunityProjectPage({
 
   // 复制到我的项目
   const handleCopy = async () => {
-    if (!session?.user?.id) {
+    // 检查用户状态
+    const userType =
+      typeof window !== "undefined" ? localStorage.getItem("userType") : null;
+    const isGuest = userType === "guest";
+    const isLoggedIn = session?.user?.id;
+
+    // 未登录且不是游客，跳转登录
+    if (!isLoggedIn && !isGuest) {
       router.push("/login");
+      return;
+    }
+
+    if (!projectData) {
+      alert("项目数据加载中，请稍后再试");
       return;
     }
 
     setIsCopying(true);
     try {
-      const response = await fetch("/api/projects/copy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectId: id,
-          projectType: "community",
-        }),
-      });
+      if (isLoggedIn) {
+        // 登录用户：通过 API 复制到云端
+        const response = await fetch("/api/projects/copy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectId: id,
+            projectType: "community",
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("复制失败");
+        if (!response.ok) {
+          throw new Error("复制失败");
+        }
+
+        const newProject = await response.json();
+        router.push(`/app/${newProject.id}`);
+      } else {
+        // 游客：保存到本地存储
+        const newId = `guest-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        const newProject: StoredProject = {
+          id: newId,
+          name: projectData.name + " (副本)",
+          config: projectData.config,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          category: projectData.category || null,
+          tags: projectData.tags || [],
+          themeColor: projectData.theme_color,
+          iconType: projectData.icon_type,
+          iconName: projectData.icon_name,
+          iconUrl: projectData.icon_url,
+          isPublished: false,
+          isOwner: true,
+        };
+
+        await saveProject(newProject);
+        router.push(`/app/${newId}`);
       }
-
-      const newProject = await response.json();
-      router.push(`/app/${newProject.id}`);
     } catch (error) {
       console.error("复制项目失败:", error);
       alert("复制失败，请重试");

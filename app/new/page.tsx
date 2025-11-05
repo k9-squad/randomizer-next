@@ -4,11 +4,32 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dices, Users, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { saveProject } from "@/lib/storage";
 import { LotteryConfig, GroupingConfig } from "@/types/project";
+import { useEffect, useState } from "react";
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isChecking, setIsChecking] = useState(true);
+
+  // 权限检查：只允许登录用户和游客访问
+  useEffect(() => {
+    if (status === "loading") return;
+
+    const userType =
+      typeof window !== "undefined" ? localStorage.getItem("userType") : null;
+    const isGuest = userType === "guest";
+    const isLoggedIn = session?.user?.id;
+
+    if (!isLoggedIn && !isGuest) {
+      // 未登录且不是游客，跳转登录
+      router.push("/login");
+    } else {
+      setIsChecking(false);
+    }
+  }, [session, status, router]);
 
   // 预设主题色
   const presetColors = [
@@ -109,6 +130,14 @@ export default function NewProjectPage() {
 
     router.push(`/app/${newId}`);
   };
+
+  if (isChecking) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-muted-foreground">检查权限中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center py-6 md:py-8 px-4 md:px-6">

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LotteryConfig, GroupingConfig, Group } from "@/types/project";
 import { distributeMembers } from "@/lib/grouping";
+import { saveProject, type StoredProject } from "@/lib/storage";
 
 // ============ 抽奖模式相关 ============
 
@@ -43,6 +44,7 @@ export default function OfficialTemplatePage({
   const { data: session } = useSession();
 
   // 通用状态
+  const [templateData, setTemplateData] = useState<any>(null);
   const [projectName, setProjectName] = useState("官方模板");
   const [locationText, setLocationText] = useState("");
   const [speed, setSpeed] = useState(30);
@@ -163,6 +165,7 @@ export default function OfficialTemplatePage({
         const template = await response.json();
         const config = template.config;
 
+        setTemplateData(template); // 保存完整模板数据用于复制
         setProjectName(template.name);
         setLocationText(config.locationText || "");
         setSpeed(Math.max(15, Math.min(60, config.speed)));
@@ -212,30 +215,68 @@ export default function OfficialTemplatePage({
 
   // 复制到我的项目
   const handleCopy = async () => {
-    if (!session?.user?.id) {
+    // 检查用户状态
+    const userType =
+      typeof window !== "undefined" ? localStorage.getItem("userType") : null;
+    const isGuest = userType === "guest";
+    const isLoggedIn = session?.user?.id;
+
+    // 未登录且不是游客，跳转登录
+    if (!isLoggedIn && !isGuest) {
       router.push("/login");
+      return;
+    }
+
+    if (!templateData) {
+      alert("模板数据加载中，请稍后再试");
       return;
     }
 
     setIsCopying(true);
     try {
-      const response = await fetch("/api/projects/copy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectId: id,
-          projectType: "official",
-        }),
-      });
+      if (isLoggedIn) {
+        // 登录用户：通过 API 复制到云端
+        const response = await fetch("/api/projects/copy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectId: id,
+            projectType: "official",
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("复制失败");
+        if (!response.ok) {
+          throw new Error("复制失败");
+        }
+
+        const newProject = await response.json();
+        router.push(`/app/${newProject.id}`);
+      } else {
+        // 游客：保存到本地存储
+        const newId = `guest-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        const newProject: StoredProject = {
+          id: newId,
+          name: templateData.name + " (副本)",
+          config: templateData.config,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          category: undefined,
+          tags: templateData.tags || [],
+          themeColor: templateData.theme_color,
+          iconType: templateData.icon_type,
+          iconName: templateData.icon_name,
+          iconUrl: templateData.icon_url,
+          isPublished: false,
+          isOwner: true,
+        };
+
+        await saveProject(newProject);
+        router.push(`/app/${newId}`);
       }
-
-      const newProject = await response.json();
-      router.push(`/app/${newProject.id}`);
     } catch (error) {
       console.error("复制项目失败:", error);
       alert("复制失败，请重试");

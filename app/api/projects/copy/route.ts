@@ -9,8 +9,10 @@ import { sql } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const session = await auth();
+    
+    // 只有登录用户才能调用此 API（游客在客户端本地处理）
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "未登录" }, { status: 401 });
+      return NextResponse.json({ error: "需要登录" }, { status: 401 });
     }
 
     const { projectId, projectType } = await request.json();
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
 
     let projectData;
     let originalAuthorId;
+    let modifiedBy: string[];
 
     // 根据类型获取项目数据
     if (projectType === "official") {
@@ -36,7 +39,9 @@ export async function POST(request: Request) {
       }
 
       projectData = templates[0];
-      originalAuthorId = null; // 官方模板没有原作者
+      // 复制官方模板：复制者成为原作者
+      originalAuthorId = session.user.id;
+      modifiedBy = [];
     } else if (projectType === "user" || projectType === "community") {
       const projects = await sql`
         SELECT * FROM projects 
@@ -51,7 +56,14 @@ export async function POST(request: Request) {
       }
 
       projectData = projects[0];
+      // 复制用户项目：保留原作者，将复制者添加到修改者列表
       originalAuthorId = projectData.original_author_id || projectData.user_id;
+      
+      // 获取现有的修改者列表，添加当前用户（如果不存在）
+      const existingModifiedBy = projectData.modified_by || [];
+      modifiedBy = existingModifiedBy.includes(session.user.id)
+        ? existingModifiedBy
+        : [...existingModifiedBy, session.user.id];
 
       // 增加复制计数
       await sql`
@@ -87,7 +99,7 @@ export async function POST(request: Request) {
         ${projectData.tags || []},
         false,
         ${originalAuthorId},
-        ${[session.user.id]}
+        ${modifiedBy}
       )
       RETURNING *
     `;
