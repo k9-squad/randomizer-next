@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     const user = result[0];
     
     // 如果用户不存在或密码为空，返回通用错误（不要泄露用户是否存在）
+    // 注意：这里不进行密码检查以避免时序攻击泄露用户是否存在
     if (!user || !user.password) {
       return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
     }
