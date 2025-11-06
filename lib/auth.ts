@@ -41,6 +41,7 @@ export const authConfig: NextAuthConfig = {
             return null
           }
 
+          // 检查邮箱是否已验证 - 将验证状态传递给 signIn callback
           return {
             id: user.id,
             email: user.email,

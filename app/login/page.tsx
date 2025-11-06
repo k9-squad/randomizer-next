@@ -37,6 +37,32 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // 首先检查邮箱验证状态（为了提供更好的错误提示）
+      // 注意：NextAuth的authorize函数仍会再次验证凭据以确保安全性
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if (!checkResponse.ok) {
+        let errorMessage = "登录失败，请稍后重试";
+        
+        if (checkData.error === "email_not_verified") {
+          errorMessage = "该邮箱未经过验证，点击邮件链接激活账号后重试";
+        } else if (checkData.error === "invalid_credentials") {
+          errorMessage = "邮箱或密码错误";
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setIsLoading(false);
+        return;
+      }
+
+      // 邮箱已验证，进行正常登录
       const result = await signIn("credentials", {
         email,
         password,
