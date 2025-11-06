@@ -44,8 +44,14 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("邮箱或密码错误");
-        toast.error("邮箱或密码错误");
+        // 检查是否是邮箱未验证的错误
+        if (result.error === "EmailNotVerified") {
+          setError("该邮箱未经过验证，点击邮件链接激活账号后重试");
+          toast.error("该邮箱未经过验证，点击邮件链接激活账号后重试");
+        } else {
+          setError("邮箱或密码错误");
+          toast.error("邮箱或密码错误");
+        }
       } else {
         // 设置用户状态
         localStorage.setItem("userType", "user");
