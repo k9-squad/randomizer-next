@@ -21,6 +21,7 @@ import {
   Settings,
 } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
+import { Logo } from "./logo";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -49,9 +50,7 @@ export function Header() {
           href="/dashboard"
           className="flex items-center gap-2 flex-shrink-0"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-            R
-          </div>
+          <Logo className="h-8 w-8" />
           <span className="hidden md:inline-block font-semibold">
             Randomizer
           </span>
