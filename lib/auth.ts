@@ -41,11 +41,7 @@ export const authConfig: NextAuthConfig = {
             return null
           }
 
-          // 检查邮箱是否已验证
-          if (!user.email_verified) {
-            throw new Error("EmailNotVerified")
-          }
-
+          // 检查邮箱是否已验证 - 将验证状态传递给 signIn callback
           return {
             id: user.id,
             email: user.email,
@@ -56,10 +52,6 @@ export const authConfig: NextAuthConfig = {
           }
         } catch (error) {
           console.error("Auth error:", error)
-          // 重新抛出特定错误
-          if ((error as Error).message === "EmailNotVerified") {
-            throw error
-          }
           return null
         }
       }

@@ -37,6 +37,35 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // 首先检查邮箱验证状态
+      const checkResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if (!checkResponse.ok) {
+        if (checkData.error === "email_not_verified") {
+          setError("该邮箱未经过验证，点击邮件链接激活账号后重试");
+          toast.error("该邮箱未经过验证，点击邮件链接激活账号后重试");
+          setIsLoading(false);
+          return;
+        } else if (checkData.error === "invalid_credentials") {
+          setError("邮箱或密码错误");
+          toast.error("邮箱或密码错误");
+          setIsLoading(false);
+          return;
+        } else {
+          setError("登录失败，请稍后重试");
+          toast.error("登录失败，请稍后重试");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // 邮箱已验证，进行正常登录
       const result = await signIn("credentials", {
         email,
         password,
@@ -44,14 +73,8 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // 检查是否是邮箱未验证的错误
-        if (result.error === "EmailNotVerified") {
-          setError("该邮箱未经过验证，点击邮件链接激活账号后重试");
-          toast.error("该邮箱未经过验证，点击邮件链接激活账号后重试");
-        } else {
-          setError("邮箱或密码错误");
-          toast.error("邮箱或密码错误");
-        }
+        setError("邮箱或密码错误");
+        toast.error("邮箱或密码错误");
       } else {
         // 设置用户状态
         localStorage.setItem("userType", "user");
